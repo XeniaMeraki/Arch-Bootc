@@ -20,12 +20,12 @@ RUN pacman -Syyuu --noconfirm \
       noto-fonts noto-fonts-cjk noto-fonts-emoji \
 \
 #CLI Utilities
-      bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano vim nvtop openssh powertop \
-      procs ripgrep tldr trash-cli tree usbutils wget wl-clipboard ydotool zsh zsh-completions yay fish yad paru \
+      bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano nvtop openssh powertop \
+      procs ripgrep tldr trash-cli tree usbutils vim wget wl-clipboard ydotool zsh zsh-completions yay \
 \
 #Drivers
-      amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver lib32-libnm lib32-libpulse \
-      vpl-gpu-rt vulkan-icd-loader vulkan-intel vulkan-radeon apparmor lib32-vulkan-radeon vulkan-mesa-layers lib32-openal openal \
+      amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver \
+      vpl-gpu-rt vulkan-icd-loader vulkan-intel vulkan-radeon apparmor \
 \
 #Network / VPN / SMB
       dnsmasq freerdp2 iproute2 iwd libmtp networkmanager-l2tp networkmanager-openconnect networkmanager-openvpn networkmanager-pptp \
@@ -35,35 +35,49 @@ RUN pacman -Syyuu --noconfirm \
       espeak-ng orca \
 \  
 #Pipewire
-      pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber pipewire-jack pipewire-alsa \
+      pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber pipewire-jack \
 \
 #Printer
       cups cups-browsed gutenprint ipp-usb hplip splix system-config-printer \
-\
-#Desktop Environment Tools
-      xdg-desktop-portal-kde xdg-user-dirs dolphin \
 \
       ${DEV_DEPS} && \
   pacman -S --clean --noconfirm && \
   rm -rf /var/cache/pacman/pkg/*
 
-RUN pacman -S \
-        steam \
-        lutris \
-        mangohud \
-        lib32-mangohud \
-        --noconfirm && \
-        wget https://raw.githubusercontent.com/Shringe/LatencyFleX-Installer/main/install.sh -O /usr/bin/latencyflex && \
-        sed -i 's@"dxvk.conf"@"/usr/share/latencyflex/dxvk.conf"@g' /usr/bin/latencyflex && \
-        chmod +x /usr/bin/latencyflex && \
-    pacman -S --clean --clean && \
-    rm -rf /var/cache/pacman/pkg/*
-        # Steam/Lutris/Wine installed separately so they use the dependencies above and don't try to install their own.
-
-
 # START ##########################################################################################################################################
+
+# Workaround due to dracut version bump, please remove eventually
+# FIXME: remove
+RUN echo -e "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/lib/systemd/system\n" | tee /etc/dracut.conf.d/fix-bootc.conf
+
+RUN --mount=type=tmpfs,dst=/tmp --mount=type=tmpfs,dst=/root \
+    pacman -S --noconfirm base-devel git rust && \
+    git clone https://github.com/bootc-dev/bootc.git /tmp/bootc && \
+    make -C /tmp/bootc bin install-all install-initramfs-dracut && \
+    sh -c 'export KERNEL_VERSION="$(basename "$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)")" && \
+    dracut --force --no-hostonly --reproducible --zstd --verbose --kver "$KERNEL_VERSION"  "/usr/lib/modules/$KERNEL_VERSION/initramfs.img"' && \
+    pacman -S --clean --noconfirm
+
+# Setup a temporary root passwd (changeme) for dev purposes
+# RUN pacman -S 
+# RUN usermod -p "$(echo "changeme" | mkpasswd -s)" root
+RUN rm -rf /boot /home /root /usr/local /srv && \
+    mkdir -p /var/{home,roothome,srv} /sysroot /boot && \
+    ln -s sysroot/ostree /ostree
+
+# Update useradd default to /var/home instead of /home for User Creation
+RUN sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd"
+
+# Necessary for `bootc install`
+RUN mkdir -p /usr/lib/ostree && \
     printf  "[composefs]\nenabled = yes\n[sysroot]\nreadonly = true\n" | \
     tee "/usr/lib/ostree/prepare-root.conf"
+
+
+# Create build user
+RUN useradd -m --shell=/bin/bash build && usermod -L build && \
+    echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 RUN pacman -S --noconfirm greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet
 
@@ -97,8 +111,6 @@ RUN userdel -r build && \
     rm -rf \
         /tmp/* \
         /var/cache/pacman/pkg/*
-
-# END ##########################################################################################################################################
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/var \
