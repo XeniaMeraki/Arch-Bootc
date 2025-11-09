@@ -52,16 +52,9 @@ RUN mkdir -p "/usr/share/fonts/Maple Mono" \
       && curl -fSsLo "/tmp/maple.zip" "$(curl "https://api.github.com/repos/subframe7536/maple-font/releases/latest" | jq '.assets[] | select(.name == "MapleMono-Variable.zip") | .browser_download_url' -rc)" \
       && unzip "/tmp/maple.zip" -d "/usr/share/fonts/Maple Mono"
 
-# Add config for dolphin to Niri and switch away from GTK/Nautilus, use Dolphin for file chooser.
-RUN echo $'[repo] \n\
-[preferred] \n\
-default=kde;gtk;gnome; \n\
-org.freedesktop.impl.portal.Access=kde; \n\
-org.freedesktop.impl.portal.Notification=kde; \n\
-org.freedesktop.impl.portal.Secret=gnome-keyring; \n\
-org.freedesktop.impl.portal.FileChooser=kde;' > /usr/share/xdg-desktop-portal/niri-portals.conf
-
-# START ##########################################################################################################################################
+##################################################################################################################################################
+# START | AUR Builder ############################################################################################################################
+##################################################################################################################################################
 
 # Workaround due to dracut version bump, please remove eventually
 # FIXME: remove
@@ -115,8 +108,21 @@ RUN paru -S \
         aur/input-remapper-bin \
         --noconfirm
 
+##################################################################################################################################################
+# END | AUR Builder ##############################################################################################################################
+##################################################################################################################################################
+
 USER root
 WORKDIR /
+
+# Add config for dolphin to Niri and switch away from GTK/Nautilus, use Dolphin for file chooser.
+RUN echo $'[repo] \n\
+[preferred] \n\
+default=kde;gtk;gnome; \n\
+org.freedesktop.impl.portal.Access=kde; \n\
+org.freedesktop.impl.portal.Notification=kde; \n\
+org.freedesktop.impl.portal.Secret=gnome-keyring; \n\
+org.freedesktop.impl.portal.FileChooser=kde;' > /usr/share/xdg-desktop-portal/niri-portals.conf
 
 RUN userdel -r build && \
     rm -drf /home/build && \
