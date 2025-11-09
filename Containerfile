@@ -4,6 +4,12 @@ ENV DEV_DEPS="base-devel git rust"
 
 ENV DRACUT_NO_XATTR=1
 
+RUN pacman -Sy --noconfirm
+RUN pacman -Syu --noconfirm
+RUN pacman -S cmake --noconfirm
+RUN pacman -S git --noconfirm
+RUN pacman -S base-devel --noconfirm
+
 RUN pacman -Syyuu --noconfirm \
 #Base packages
       base dracut linux linux-firmware ostree systemd btrfs-progs e2fsprogs xfsprogs binutils dosfstools skopeo dbus dbus-glib glib2 shadow \
@@ -16,7 +22,7 @@ RUN pacman -Syyuu --noconfirm \
 \
 #CLI Utilities
       bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano vim nvtop openssh powertop \
-      procs ripgrep tldr trash-cli tree usbutils wget wl-clipboard ydotool zsh zsh-completions yay fish yad \
+      procs ripgrep tldr trash-cli tree usbutils wget wl-clipboard ydotool zsh zsh-completions yay fish yad paru \
 \
 #Drivers
       amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver lib32-libnm lib32-libpulse \
@@ -58,14 +64,17 @@ RUN pacman -S \
 
 # START ##########################################################################################################################################
 # AUR Build and Install Dedicated Section
-# Create build user
-RUN useradd -m --shell=/bin/bash build && usermod -L build && \
-    echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
-    echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+RUN useradd -m -G wheel -s /bin/bash builder
+RUN sed -Ei 's/^#\ (%wheel.*NOPASSWD.*)/\1/' /etc/sudoers
+USER builder
+WORKDIR /home/builder/
+RUN git clone https://aur.archlinux.org/paru.git && cd paru \
+  && makepkg -si --noconfirm && cd .. && rm -rf paru
 
 # Install AUR packages
-USER build
-WORKDIR /home/build
+USER builder
+WORKDIR /home/builder
 RUN paru -S \
         aur/protontricks \
         aur/vkbasalt \
