@@ -40,6 +40,35 @@ RUN pacman -Syyuu --noconfirm \
   rm -rf /var/cache/pacman/pkg/*
 
 # START ##########################################################################################################################################
+# AUR Build and Install Dedicated Section
+# Create build user
+RUN useradd -m --shell=/bin/bash build && usermod -L build && \
+    echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Install AUR packages
+USER build
+WORKDIR /home/build
+RUN paru -S \
+        aur/protontricks \
+        aur/vkbasalt \
+        aur/lib32-vkbasalt \
+        aur/obs-vkcapture-git \
+        aur/lib32-obs-vkcapture-git \
+        aur/lib32-gperftools \
+        aur/steamcmd \
+        aur/steam-devices-git \
+        aur/niri-git \
+        aur/dms-shell-git \
+        aur/matugen-bin \
+        aur/input-remapper-bin \
+        --noconfirm
+
+USER root
+WORKDIR /
+
+# END ##########################################################################################################################################
+
 
 # Workaround due to dracut version bump, please remove eventually
 # FIXME: remove
