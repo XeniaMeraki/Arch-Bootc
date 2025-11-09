@@ -75,7 +75,7 @@ RUN git clone https://aur.archlinux.org/paru.git && cd paru \
 # Install AUR packages
 USER builder
 WORKDIR /home/builder
-RUN paru -S \
+RUN paru -S --noconfirm && makepkg -si --noconfirm \
         aur/protontricks \
         aur/vkbasalt \
         aur/lib32-vkbasalt \
@@ -83,12 +83,10 @@ RUN paru -S \
         aur/lib32-obs-vkcapture-git \
         aur/lib32-gperftools \
         aur/steamcmd \
-        aur/steam-devices-git \
         aur/niri-git \
         aur/dms-shell-git \
         aur/matugen-bin \
         aur/input-remapper-bin \
-        --noconfirm
 
 USER root
 WORKDIR /
