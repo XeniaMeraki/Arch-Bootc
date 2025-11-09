@@ -3,7 +3,7 @@ FROM scratch AS ctx
 COPY build_scripts /build
 COPY system_files /files
 
-FROM docker.io/cachyos/cachyos:latest AS builder
+FROM docker.io/cachyos/cachyos:latest
 
 ENV DEV_DEPS="base-devel git rust"
 
@@ -43,6 +43,11 @@ RUN pacman -Syyuu --noconfirm \
       ${DEV_DEPS} && \
   pacman -S --clean --noconfirm && \
   rm -rf /var/cache/pacman/pkg/*
+
+#Add Maple Mono font
+RUN mkdir -p "/usr/share/fonts/Maple Mono" \
+      && curl -fSsLo "/tmp/maple.zip" "$(curl "https://api.github.com/repos/subframe7536/maple-font/releases/latest" | jq '.assets[] | select(.name == "MapleMono-Variable.zip") | .browser_download_url' -rc)" \
+      && unzip "/tmp/maple.zip" -d "/usr/share/fonts/Maple Mono"
 
 # START ##########################################################################################################################################
 
