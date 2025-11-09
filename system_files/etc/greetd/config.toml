@@ -1,0 +1,6 @@
+[terminal]
+vt = 1
+
+[default_session]
+command = "tuigreet --time --user-menu --greeting 'What the sigma' --remember --remember-session --asterisks --power-shutdown 'systemctl poweroff' --power-reboot 'systemctl reboot' --power-no-setsid --width 140 --theme border=magenta;text=magenta;prompt=lightmagenta;time=magenta;action=lightmagenta;button=magenta;container=gray;input=magenta --cmd niri-session"
+user = "greetd"

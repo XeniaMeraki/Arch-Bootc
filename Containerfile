@@ -1,3 +1,8 @@
+FROM scratch AS ctx
+
+COPY build_scripts /build
+COPY system_files /files
+
 FROM docker.io/cachyos/cachyos:latest AS builder
 
 ENV DEV_DEPS="base-devel git rust"
@@ -120,5 +125,52 @@ RUN sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd"
 RUN mkdir -p /usr/lib/ostree && \
     printf  "[composefs]\nenabled = yes\n[sysroot]\nreadonly = true\n" | \
     tee "/usr/lib/ostree/prepare-root.conf"
+
+
+# Create build user
+RUN useradd -m --shell=/bin/bash build && usermod -L build && \
+    echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+RUN pacman -S --noconfirm greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet
+
+# Install AUR packages
+USER build
+WORKDIR /home/build
+RUN --mount=type=tmpfs,dst=/tmp \
+    git clone https://aur.archlinux.org/paru-bin.git --single-branch /tmp/paru && \
+    cd /tmp/paru && \
+    makepkg -si --noconfirm && \
+    cd .. && \
+    rm -drf paru-bin
+
+RUN paru -S \
+        aur/steam-devices-git \
+        aur/uxplay \
+        aur/niri-git \
+        aur/noctalia-shell-git \
+        aur/matugen-bin \
+        aur/input-remapper-bin \
+        --noconfirm
+
+USER root
+WORKDIR /
+
+RUN userdel -r build && \
+    rm -drf /home/build && \
+    sed -i '/build ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
+    sed -i '/root ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
+    rm -rf /home/build && \
+    rm -rf \
+        /tmp/* \
+        /var/cache/pacman/pkg/*
+
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=tmpfs,dst=/var \
+    --mount=type=tmpfs,dst=/tmp \
+    /ctx/build/00-theme.sh
+
+RUN pacman -S whois --noconfirm
+RUN usermod -p "$(echo "changeme" | mkpasswd -s)" root
 
 RUN bootc container lint
