@@ -15,12 +15,12 @@ RUN pacman -Syyuu --noconfirm \
       noto-fonts noto-fonts-cjk noto-fonts-emoji \
 \
 #CLI Utilities
-      bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano nvtop openssh powertop \
-      procs ripgrep tldr trash-cli tree usbutils vim wget wl-clipboard ydotool zsh zsh-completions yay \
+      bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano vim nvtop openssh powertop \
+      procs ripgrep tldr trash-cli tree usbutils wget wl-clipboard ydotool zsh zsh-completions yay fish yad \
 \
 #Drivers
-      amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver \
-      vpl-gpu-rt vulkan-icd-loader vulkan-intel vulkan-radeon apparmor \
+      amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver lib32-libnm lib32-libpulse \
+      vpl-gpu-rt vulkan-icd-loader vulkan-intel vulkan-radeon apparmor lib32-vulkan-radeon vulkan-mesa-layers lib32-openal openal \
 \
 #Network / VPN / SMB
       dnsmasq freerdp2 iproute2 iwd libmtp networkmanager-l2tp networkmanager-openconnect networkmanager-openvpn networkmanager-pptp \
@@ -30,14 +30,31 @@ RUN pacman -Syyuu --noconfirm \
       espeak-ng orca \
 \  
 #Pipewire
-      pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber pipewire-jack \
+      pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber pipewire-jack pipewire-alsa \
 \
 #Printer
       cups cups-browsed gutenprint ipp-usb hplip splix system-config-printer \
 \
+#Desktop Environment Tools
+      xdg-desktop-portal-kde xdg-user-dirs dolphin \
+\
       ${DEV_DEPS} && \
   pacman -S --clean --noconfirm && \
   rm -rf /var/cache/pacman/pkg/*
+
+RUN pacman -S \
+        steam \
+        lutris \
+        mangohud \
+        lib32-mangohud \
+        --noconfirm && \
+        wget https://raw.githubusercontent.com/Shringe/LatencyFleX-Installer/main/install.sh -O /usr/bin/latencyflex && \
+        sed -i 's@"dxvk.conf"@"/usr/share/latencyflex/dxvk.conf"@g' /usr/bin/latencyflex && \
+        chmod +x /usr/bin/latencyflex && \
+    pacman -S --clean --clean && \
+    rm -rf /var/cache/pacman/pkg/*
+        # Steam/Lutris/Wine installed separately so they use the dependencies above and don't try to install their own.
+
 
 # START ##########################################################################################################################################
 # AUR Build and Install Dedicated Section
