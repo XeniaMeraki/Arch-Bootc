@@ -10,44 +10,58 @@ ENV DEV_DEPS="base-devel git rust"
 ENV DRACUT_NO_XATTR=1
 
 RUN pacman -Syyuu --noconfirm \
-#Base packages
+# Base packages
       base dracut linux linux-firmware ostree systemd btrfs-progs e2fsprogs xfsprogs binutils dosfstools skopeo dbus dbus-glib glib2 shadow \
 \
-#Media/Install utilities
+# Media/Install utilities
        librsvg libglvnd qt6-multimedia-ffmpeg plymouth flatpak acpid aha clinfo ddcutil dmidecode mesa-utils ntfs-3g nvme-cli vulkan-tools wayland-utils \
 \
-#Fonts
+# Fonts
       noto-fonts noto-fonts-cjk noto-fonts-emoji \
 \
-#CLI Utilities
+# CLI Utilities
       bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano nvtop openssh powertop \
-      procs ripgrep tldr trash-cli tree usbutils vim wget wl-clipboard ydotool zsh zsh-completions yay \
+      procs ripgrep tldr trash-cli tree usbutils vim wget wl-clipboard ydotool zsh zsh-completions yay unzip \
 \
-#Drivers
+# Drivers
       amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver \
       vpl-gpu-rt vulkan-icd-loader vulkan-intel vulkan-radeon apparmor \
 \
-#Network / VPN / SMB
+# Network / VPN / SMB
       dnsmasq freerdp2 iproute2 iwd libmtp networkmanager-l2tp networkmanager-openconnect networkmanager-openvpn networkmanager-pptp \
       networkmanager-strongswan networkmanager-vpnc nfs-utils nss-mdns samba smbclient ufw \
 \
-#Accessibility
+# Accessibility
       espeak-ng orca \
-\  
-#Pipewire
+\
+# Pipewire
       pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber pipewire-jack \
 \
-#Printer
+# Printer
       cups cups-browsed gutenprint ipp-usb hplip splix system-config-printer \
 \
+# Desktop Environment needs
+      greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs dolphin \
+      ffmpegthumbs filelight kdegraphics-thumbnailers kdenetwork-filesharing kio-admin kompare purpose \
       ${DEV_DEPS} && \
   pacman -S --clean --noconfirm && \
   rm -rf /var/cache/pacman/pkg/*
 
-#Add Maple Mono font
+# Add Maple Mono font
 RUN mkdir -p "/usr/share/fonts/Maple Mono" \
       && curl -fSsLo "/tmp/maple.zip" "$(curl "https://api.github.com/repos/subframe7536/maple-font/releases/latest" | jq '.assets[] | select(.name == "MapleMono-Variable.zip") | .browser_download_url' -rc)" \
       && unzip "/tmp/maple.zip" -d "/usr/share/fonts/Maple Mono"
+
+# Add config for dolphin to Niri and switch away from GTK/Nautilus, use Dolphin for file chooser.
+RUN tee /usr/share/xdg-desktop-portal/niri-portals.conf <<EOF
+[preferred]
+default=kde;gtk;gnome;
+org.freedesktop.impl.portal.ScreenCast=gnome;
+org.freedesktop.impl.portal.Access=kde;
+org.freedesktop.impl.portal.Notification=kde;
+org.freedesktop.impl.portal.Secret=gnome-keyring;
+org.freedesktop.impl.portal.FileChooser=kde;
+EOF
 
 # START ##########################################################################################################################################
 
@@ -83,8 +97,6 @@ RUN mkdir -p /usr/lib/ostree && \
 RUN useradd -m --shell=/bin/bash build && usermod -L build && \
     echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
     echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-RUN pacman -S --noconfirm greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet
 
 # Install AUR packages
 USER build
