@@ -59,8 +59,7 @@ default=kde;gtk;gnome; \n\
 org.freedesktop.impl.portal.Access=kde; \n\
 org.freedesktop.impl.portal.Notification=kde; \n\
 org.freedesktop.impl.portal.Secret=gnome-keyring; \n\
-org.freedesktop.impl.portal.FileChooser=kde;\
-" > /usr/share/xdg-desktop-portal/niri-portals.conf
+org.freedesktop.impl.portal.FileChooser=kde;' > /usr/share/xdg-desktop-portal/niri-portals.conf
 
 # START ##########################################################################################################################################
 
