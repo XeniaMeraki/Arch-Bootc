@@ -9,12 +9,6 @@ ENV DEV_DEPS="base-devel git rust"
 
 ENV DRACUT_NO_XATTR=1
 
-RUN pacman -Sy --noconfirm
-RUN pacman -Syu --noconfirm
-RUN pacman -S cmake --noconfirm
-RUN pacman -S git --noconfirm
-RUN pacman -S base-devel --noconfirm
-
 RUN pacman -Syyuu --noconfirm \
 #Base packages
       base dracut linux linux-firmware ostree systemd btrfs-progs e2fsprogs xfsprogs binutils dosfstools skopeo dbus dbus-glib glib2 shadow \
@@ -68,69 +62,8 @@ RUN pacman -S \
 
 
 # START ##########################################################################################################################################
-# AUR Build and Install Dedicated Section
-
-RUN useradd -m -G wheel -s /bin/bash builder
-RUN sed -Ei 's/^#\ (%wheel.*NOPASSWD.*)/\1/' /etc/sudoers
-USER builder
-WORKDIR /home/builder/
-RUN git clone https://aur.archlinux.org/paru.git && cd paru \
-  && makepkg -si --noconfirm && cd .. && rm -rf paru
-
-# Install AUR packages
-USER builder
-WORKDIR /home/builder
-RUN paru -S --noconfirm && makepkg -si --noconfirm \
-        aur/protontricks \
-        aur/vkbasalt \
-        aur/lib32-vkbasalt \
-        aur/obs-vkcapture-git \
-        aur/lib32-obs-vkcapture-git \
-        aur/lib32-gperftools \
-        aur/steamcmd \
-        aur/niri-git \
-        aur/dms-shell-git \
-        aur/matugen-bin \
-        aur/input-remapper-bin \
-
-USER root
-WORKDIR /
-
-# END ##########################################################################################################################################
-
-
-# Workaround due to dracut version bump, please remove eventually
-# FIXME: remove
-RUN echo -e "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/lib/systemd/system\n" | tee /etc/dracut.conf.d/fix-bootc.conf
-
-RUN --mount=type=tmpfs,dst=/tmp --mount=type=tmpfs,dst=/root \
-    pacman -S --noconfirm base-devel git rust && \
-    git clone https://github.com/bootc-dev/bootc.git /tmp/bootc && \
-    make -C /tmp/bootc bin install-all install-initramfs-dracut && \
-    sh -c 'export KERNEL_VERSION="$(basename "$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)")" && \
-    dracut --force --no-hostonly --reproducible --zstd --verbose --kver "$KERNEL_VERSION"  "/usr/lib/modules/$KERNEL_VERSION/initramfs.img"' && \
-    pacman -S --clean --noconfirm
-
-# Setup a temporary root passwd (changeme) for dev purposes
-# RUN pacman -S 
-# RUN usermod -p "$(echo "changeme" | mkpasswd -s)" root
-RUN rm -rf /boot /home /root /usr/local /srv && \
-    mkdir -p /var/{home,roothome,srv} /sysroot /boot && \
-    ln -s sysroot/ostree /ostree
-
-# Update useradd default to /var/home instead of /home for User Creation
-RUN sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd"
-
-# Necessary for `bootc install`
-RUN mkdir -p /usr/lib/ostree && \
     printf  "[composefs]\nenabled = yes\n[sysroot]\nreadonly = true\n" | \
     tee "/usr/lib/ostree/prepare-root.conf"
-
-
-# Create build user
-RUN useradd -m --shell=/bin/bash build && usermod -L build && \
-    echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
-    echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 RUN pacman -S --noconfirm greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet
 
@@ -164,6 +97,8 @@ RUN userdel -r build && \
     rm -rf \
         /tmp/* \
         /var/cache/pacman/pkg/*
+
+# END ##########################################################################################################################################
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/var \
