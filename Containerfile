@@ -3,11 +3,20 @@ FROM scratch AS ctx
 COPY build_scripts /build
 COPY system_files /files
 
-FROM docker.io/cachyos/cachyos-v3:latest
+FROM docker.io/cachyos/cachyos:latest
 
 ENV DEV_DEPS="base-devel git rust"
 
 ENV DRACUT_NO_XATTR=1
+
+# Section 1 - Package Installs
+# Section 2 - Set up bootc dracut
+# Section 3 - AUR Builder
+# Section 4 - Spawn config files
+# Section 5 - Final Bootc Setup
+########################################################################################################################################
+# Section 1 - Package Installs #########################################################################################################
+########################################################################################################################################
 
 RUN pacman -Syyuu --noconfirm \
 # Base packages
@@ -42,7 +51,7 @@ RUN pacman -Syyuu --noconfirm \
 \
 # Desktop Environment needs
       greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs dolphin \
-      ffmpegthumbs filelight kdegraphics-thumbnailers kdenetwork-filesharing kio-admin kompare purpose \
+      ffmpegthumbs filelight kdegraphics-thumbnailers kdenetwork-filesharing kio-admin kompare purpose chezmoi \
       ${DEV_DEPS} && \
   pacman -S --clean --noconfirm && \
   rm -rf /var/cache/pacman/pkg/*
@@ -52,9 +61,9 @@ RUN mkdir -p "/usr/share/fonts/Maple Mono" \
       && curl -fSsLo "/tmp/maple.zip" "$(curl "https://api.github.com/repos/subframe7536/maple-font/releases/latest" | jq '.assets[] | select(.name == "MapleMono-Variable.zip") | .browser_download_url' -rc)" \
       && unzip "/tmp/maple.zip" -d "/usr/share/fonts/Maple Mono"
 
-##################################################################################################################################################
-# START | AUR Builder ############################################################################################################################
-##################################################################################################################################################
+########################################################################################################################################
+# Section 2 - Set up bootc dracut ######################################################################################################
+########################################################################################################################################
 
 # Workaround due to dracut version bump, please remove eventually
 # FIXME: remove
@@ -67,6 +76,10 @@ RUN --mount=type=tmpfs,dst=/tmp --mount=type=tmpfs,dst=/root \
     sh -c 'export KERNEL_VERSION="$(basename "$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)")" && \
     dracut --force --no-hostonly --reproducible --zstd --verbose --kver --add ostree "$KERNEL_VERSION"  "/usr/lib/modules/$KERNEL_VERSION/initramfs.img"' && \
     pacman -S --clean --noconfirm
+
+########################################################################################################################################
+# Section 3 - AUR Builder ##############################################################################################################
+########################################################################################################################################
 
 # Setup a temporary root passwd (changeme) for dev purposes
 # RUN pacman -S 
@@ -108,12 +121,21 @@ RUN paru -S \
         aur/input-remapper-bin \
         --noconfirm
 
-##################################################################################################################################################
-# END | AUR Builder ##############################################################################################################################
-##################################################################################################################################################
-
 USER root
 WORKDIR /
+
+RUN userdel -r build && \
+    rm -drf /home/build && \
+    sed -i '/build ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
+    sed -i '/root ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
+    rm -rf /home/build && \
+    rm -rf \
+        /tmp/* \
+        /var/cache/pacman/pkg/*
+
+########################################################################################################################################
+# Section 4 - Spawn config files #######################################################################################################
+########################################################################################################################################
 
 # Add config for dolphin to Niri and switch away from GTK/Nautilus, use Dolphin for file chooser.
 RUN echo $'[repo] \n\
@@ -124,14 +146,13 @@ org.freedesktop.impl.portal.Notification=kde; \n\
 org.freedesktop.impl.portal.Secret=gnome-keyring; \n\
 org.freedesktop.impl.portal.FileChooser=kde;' > /usr/share/xdg-desktop-portal/niri-portals.conf
 
-RUN userdel -r build && \
-    rm -drf /home/build && \
-    sed -i '/build ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
-    sed -i '/root ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
-    rm -rf /home/build && \
-    rm -rf \
-        /tmp/* \
-        /var/cache/pacman/pkg/*
+# Use Chezmoi to set up visual assets, avatars, and wallpapers
+RUN rm -rf /usr/share/xeniaos/zdots \
+      git clone https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots
+
+########################################################################################################################################
+# Section 5 - Final Bootc Setup ########################################################################################################
+########################################################################################################################################
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/var \
