@@ -53,15 +53,14 @@ RUN mkdir -p "/usr/share/fonts/Maple Mono" \
       && unzip "/tmp/maple.zip" -d "/usr/share/fonts/Maple Mono"
 
 # Add config for dolphin to Niri and switch away from GTK/Nautilus, use Dolphin for file chooser.
-SHELL ["/bin/bash", "-c"]
-
 RUN echo $'[repo] \n\
 [preferred] \n\
 default=kde;gtk;gnome; \n\
 org.freedesktop.impl.portal.Access=kde; \n\
 org.freedesktop.impl.portal.Notification=kde; \n\
 org.freedesktop.impl.portal.Secret=gnome-keyring; \n\
-org.freedesktop.impl.portal.FileChooser=kde; > /usr/share/xdg-desktop-portal/niri-portals.conf
+org.freedesktop.impl.portal.FileChooser=kde;\
+" > /usr/share/xdg-desktop-portal/niri-portals.conf
 
 # START ##########################################################################################################################################
 
