@@ -1,3 +1,31 @@
+#       !`              @                            ☆ﾟ.*･｡ﾟXeniaOS ﾟ｡･*.ﾟ☆
+#      @```b        @@@@@                         Arch/CachyOS Bootc | Niri
+#     @`````@     @/@@@@                       Noctalia | DMS | Gaming On Linux
+#    @@``'))))))))))C@@                       Starship | Ptyxis | Dolphin on Niri
+#   @@@){)))))())))))))                              ☆ﾟ.Flatpaks | FOSS.ﾟ☆
+#    @r))))@oooo)))))h)))[                                 
+#    rr)))joooooo(xooooo@)
+# rrrxr))r/l;,,,z@{,,,,,@@                         One containerfile to rule them all!
+#   rr  )        v  @;@rx                             Trans rights are human rights!
+#     rrr)    \__^__/   ji                                
+#      rj].           . r
+#      [[]]11111111111111111]                                   Credits
+#     ][[[]]][11111111111111111<                  Arch | Bootc | Bazzite | Ublue | Zirconium 
+#     ][[[[[]]]]]]]]]]]]]]-111111[                  Xenia Meraki the transfem package fox
+#     ]-[[[[[[;]]]]]]]]]]]]]]]]   1                 Docker | Podman | Fedora | Proton | Wine 
+#     ]][[[[[[[[[[[]]]]]]]]]]]]]                    @tulilirockz @kylegospo @valerie-tar-gz
+#     1]][[[[[[[[[[[[[[<]]]]]]]]]                    Artists Jasper Valery | Delphic Melody
+#      11]]][[[[[[[[[[[[[[[]]]]]]]                           Chimmie Firefly
+#       111]]]]'[[[[[[[[[[[[[[]]]]
+#         111-]]]]][[[[[[[[[[[[[]]
+#           11111]]]]]_[[[[[[[[[[]
+#               11111]]]i[[[[[[[[
+#                  1111]]+[[[[[[^
+#                    11 ]][[[[[[
+#                    11 +][[[[
+#                    1   ][[
+#                       `            Credit art: Cathodegaytube for original art, @catumin for ascii-ification
+
 FROM scratch AS ctx
 
 COPY build_scripts /build
