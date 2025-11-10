@@ -79,7 +79,7 @@ RUN pacman -Syyuu --noconfirm \
 \
 # Desktop Environment needs
       greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs dolphin \
-      ffmpegthumbs filelight kdegraphics-thumbnailers kdenetwork-filesharing kio-admin kompare purpose chezmoi \
+      ffmpegthumbs filelight kdegraphics-thumbnailers kdenetwork-filesharing kio-admin kompare purpose chezmoi flatpak \
       ${DEV_DEPS} && \
   pacman -S --clean --noconfirm && \
   rm -rf /var/cache/pacman/pkg/*
@@ -166,7 +166,7 @@ RUN userdel -r build && \
 ########################################################################################################################################
 
 # Add config for dolphin to Niri and switch away from GTK/Nautilus, use Dolphin for file chooser.
-RUN echo $'[repo] \n\
+      RUN echo $'[repo] \n\
 [preferred] \n\
 default=kde;gtk;gnome; \n\
 org.freedesktop.impl.portal.Access=kde; \n\
@@ -175,8 +175,19 @@ org.freedesktop.impl.portal.Secret=gnome-keyring; \n\
 org.freedesktop.impl.portal.FileChooser=kde;' > /usr/share/xdg-desktop-portal/niri-portals.conf
 
 # Use Chezmoi to set up visual assets, avatars, and wallpapers
-RUN rm -rf /usr/share/xeniaos/zdots && \
+      RUN rm -rf /usr/share/xeniaos/zdots && \
       git clone https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots
+
+#Flatpak repo add
+      RUN mkdir -p /etc/flatpak/remotes.d/ && \
+      curl --retry 3 -Lo /etc/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo
+
+# OS Release and Update uwu
+      RUN echo $'[repo] \n\
+NAME="XeniaOS" \n\
+PRETTY_NAME="XeniaOS" \n\
+DEFAULT_HOSTNAME="XeniaOS" \n\
+HOME_URL="https://github.com/XeniaMeraki/XeniaOS"' > /etc/os-release
 
 ########################################################################################################################################
 # Section 5 - Final Bootc Setup ########################################################################################################
