@@ -250,11 +250,6 @@ RUN echo 'Z  /var/lib/greetd -    greetd greetd -   -' >> /usr/lib/tmpfiles.d/gr
 # Section 5 - Final Bootc Setup ########################################################################################################
 ########################################################################################################################################
 
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    --mount=type=tmpfs,dst=/var \
-    --mount=type=tmpfs,dst=/tmp \
-    /ctx/build/00-theme.sh
-
 RUN pacman -S whois --noconfirm
 RUN usermod -p "$(echo "changeme" | mkpasswd -s)" root
 
