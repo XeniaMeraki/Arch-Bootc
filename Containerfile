@@ -46,7 +46,7 @@ ENV DRACUT_NO_XATTR=1
 # Section 1 - Package Installs #########################################################################################################
 ########################################################################################################################################
 
-      RUN pacman -Syu --noconfirm \
+      RUN pacman -Syyuu --noconfirm \
 # Base packages
       base dracut linux linux-firmware ostree systemd btrfs-progs e2fsprogs xfsprogs binutils dosfstools skopeo dbus dbus-glib glib2 shadow \
 \
