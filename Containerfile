@@ -26,11 +26,6 @@
 #                    1   ][[
 #                       `            Credit art: Cathodegaytube for original art, @catumin for ascii-ification
 
-FROM scratch AS ctx
-
-COPY build_scripts /build
-COPY system_files /files
-
 FROM docker.io/cachyos/cachyos:latest
 
 ENV DEV_DEPS="base-devel git rust"
@@ -167,8 +162,7 @@ RUN userdel -r build && \
 ########################################################################################################################################
 
 # Add config for dolphin to Niri and switch away from GTK/Nautilus, use Dolphin for file chooser.
-RUN echo '[repo] \n\
-[preferred] \n\
+RUN echo '[preferred] \n\
 default=kde;gtk;gnome; \n\
 org.freedesktop.impl.portal.Access=kde; \n\
 org.freedesktop.impl.portal.Notification=kde; \n\
@@ -184,8 +178,7 @@ RUN mkdir -p /etc/flatpak/remotes.d/ && \
       curl --retry 3 -Lo /etc/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo
 
 # Noctalia Service add
-RUN echo '[repo] \n\
-[Unit] \n\
+RUN echo '[Unit] \n\
 Description=Noctalia Shell Service \n\
 PartOf=graphical-session.target \n\
 After=graphical-session.target \n\
@@ -199,27 +192,23 @@ RestartSec=1 \n\
 WantedBy=graphical-session.target' > /usr/lib/systemd/user/noctalia.service
 
 # OS Release and Update uwu
-RUN echo '[repo] \n\
-NAME="XeniaOS" \n\
+RUN echo 'NAME="XeniaOS" \n\
 PRETTY_NAME="XeniaOS" \n\
 DEFAULT_HOSTNAME="XeniaOS" \n\
 HOME_URL="https://github.com/XeniaMeraki/XeniaOS"' > /etc/os-release
 
 # Activate NTSync
-RUN echo '[repo] \n\
-      ntsync' > /etc/modules-load.d/ntsync.conf
+RUN echo 'ntsync' > /etc/modules-load.d/ntsync.conf
 
 # CachyOS bbr3 Config Option
-RUN echo '[repo] \n\
-net.core.default_qdisc=fq \n\
+RUN echo 'net.core.default_qdisc=fq \n\
 net.ipv4.tcp_congestion_control=bbr' > /etc/sysctl.d/99-bbr3.conf
 
 #Starship setup
 RUN echo -e "eval "$(starship init bash)" >> /etc/bash.bashrc
 
 # Automounter Systemd Service
-RUN echo '[repo] \n\
-[Unit] \n\
+RUN echo '[Unit] \n\
 Description=Udiskie automount \n\
 PartOf=graphical-session.target \n\
 After=graphical-session.target \n\
@@ -233,8 +222,7 @@ RestartSec=1 \n\
 WantedBy=graphical-session.target' > /usr/lib/systemd/user/udiskie.service
 
 # XWayland Satellite Systemd Service
-RUN echo '[repo] \n\
-[Unit] \n\
+RUN echo '[Unit] \n\
 Description=Xwayland satellite \n\
 PartOf=graphical-session.target \n\
 After=graphical-session.target \n\
@@ -249,19 +237,14 @@ WantedBy=graphical-session.target' > /usr/lib/systemd/user/xwayland-satellite.se
 
 # Starts with Niri Session - Services for User Interaction
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=plasma-polkit-agent.service" "/usr/lib/systemd/user/niri.service"
-
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=udiskie.service" "/usr/lib/systemd/user/niri.service"
-
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=xwayland-satellite.service" "/usr/lib/systemd/user/niri.service"
-
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=noctalia.service" "/usr/lib/systemd/user/niri.service"
-
 RUN systemctl enable greetd
 
 # Greetd Setup - Login Manager
-RUN echo '[repo] \n\
-#Type Name   ID    GECOS           Home directory  Shell \n\
-u     greetd -     "greetd daemon" /var/lib/greetd' > /usr/lib/sysusers.d/greetd.conf
+RUN echo 'u     greetd -     "greetd daemon" /var/lib/greetd' >> /usr/lib/sysusers.d/greetd.conf
+RUN echo 'Z  /var/lib/greetd -    greetd greetd -   -' >> /usr/lib/tmpfiles.d/greetd.conf
 
 ########################################################################################################################################
 # Section 5 - Final Bootc Setup ########################################################################################################
