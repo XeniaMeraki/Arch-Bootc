@@ -245,6 +245,40 @@ RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=xwayland-satellite.service" "/usr/lib/sys
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=noctalia.service" "/usr/lib/systemd/user/niri.service"
 RUN systemctl enable greetd
 
+RUN echo '[Unit]\n\
+Description=Initializes Chezmoi if directory is missing\n\
+ConditionPathExists=!%h/.config/xeniaos/chezmoi\n\
+\n\
+[Service]\n\
+ExecStart=mkdir -p %h/.config/xeniaos/chezmoi\n\
+ExecStart=touch %h/.config/xeniaos/chezmoi/chezmoi.toml\n\
+ExecStart=chezmoi apply -S /usr/share/xeniaos/zdots --config %h/.config/xeniaos/chezmoi/chezmoi.toml\n\
+Type=oneshot\n\
+\n\
+[Install]\n\
+WantedBy=default.target' >> /usr/lib/systemd/user/chezmoi-init.service
+
+RUN echo '[Unit]\n\
+Description=Chezmoi Update\n\
+\n\
+[Service]\n\
+ExecStart=mkdir -p %h/.config/xeniaos/chezmoi\n\
+ExecStart=touch %h/.config/xeniaos/chezmoi/chezmoi.toml\n\
+ExecStart=sh -c 'yes s | chezmoi apply --no-tty --keep-going -S /usr/share/xeniaos/zdots --verbose --config %h/.config/xeniaos/chezmoi/chezmoi.toml\n\
+Type=oneshot' >> /usr/lib/systemd/user/chezmoi-update.service
+
+RUN echo '[Unit]\n\
+Description=Timer for Chezmoi Update\n\
+# This service will only execute for a user with an existing chezmoi directory\n\
+ConditionPathExists=%h/.config/xeniaos/chezmoi\n\
+\n\
+[Timer]\n\
+OnBootSec=5m\n\
+OnUnitInactiveSec=1d\n\
+\n\
+[Install]\n\
+WantedBy=timers.target' >> /usr/lib/systemd/user/chezmoi-update.timer
+
 # Greetd Setup - Login Manager
 RUN echo 'u     greetd -     "greetd daemon" /var/lib/greetd' >> /usr/lib/sysusers.d/greetd.conf
 RUN echo 'Z  /var/lib/greetd -    greetd greetd -   -' >> /usr/lib/tmpfiles.d/greetd.conf
