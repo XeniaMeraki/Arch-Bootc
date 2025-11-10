@@ -34,7 +34,7 @@ ENV DRACUT_NO_XATTR=1
 
 # Section 1 - Package Installs
 # Section 2 - Set up bootc dracut
-# Section 3 - AUR Builder
+# Section 3 - Chaotic AUR
 # Section 4 - Spawn config files
 # Section 5 - Final Bootc Setup
 ########################################################################################################################################
@@ -102,19 +102,20 @@ RUN --mount=type=tmpfs,dst=/tmp --mount=type=tmpfs,dst=/root \
     pacman -S --clean --noconfirm
 
 ########################################################################################################################################
-# Section 3 - AUR Builder ##############################################################################################################
+# Section 3 - Chaotic AUR ##############################################################################################################
 ########################################################################################################################################
 
-RUN pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com --noconfirm
+RUN pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
 
-RUN pacman-key --lsign-key 3056513887B78AEB --noconfirm
-
-RUN echo '[chaotic-aur]\n\
-Include = /etc/pacman.d/chaotic-mirrorlist' >> /etc/pacman.conf
+RUN pacman-key --init && pacman-key --lsign-key 3056513887B78AEB
 
 RUN pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' --noconfirm
 
 RUN pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
+
+RUN echo -e '[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist' >> /etc/pacman.conf
+
+RUN pacman -Sy --noconfirm
 
 RUN pacman -S \
       chaotic-aur/niri-git \
