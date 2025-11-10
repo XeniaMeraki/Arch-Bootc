@@ -208,7 +208,7 @@ RUN echo 'net.core.default_qdisc=fq \n\
 net.ipv4.tcp_congestion_control=bbr' > /etc/sysctl.d/99-bbr3.conf
 
 #Starship setup
-RUN echo -e "eval "$(starship init bash)" >> /etc/bash.bashrc
+RUN echo 'eval "$(starship init bash)"' >> /etc/bash.bashrc
 
 # Automounter Systemd Service
 RUN echo '[Unit] \n\
