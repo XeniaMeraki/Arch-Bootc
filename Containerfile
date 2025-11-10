@@ -74,7 +74,7 @@ RUN pacman -Syyuu --noconfirm \
 \
 # Desktop Environment needs
       greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs dolphin \
-      ffmpegthumbs filelight kdegraphics-thumbnailers kdenetwork-filesharing kio-admin kompare purpose chezmoi flatpak \
+      ffmpegthumbs filelight kdegraphics-thumbnailers kdenetwork-filesharing kio-admin kompare purpose chezmoi flatpak matugen \
 \
       ${DEV_DEPS} && \
   pacman -S --clean --noconfirm && \
@@ -105,57 +105,24 @@ RUN --mount=type=tmpfs,dst=/tmp --mount=type=tmpfs,dst=/root \
 # Section 3 - AUR Builder ##############################################################################################################
 ########################################################################################################################################
 
-# Setup a temporary root passwd (changeme) for dev purposes
-# RUN pacman -S 
-# RUN usermod -p "$(echo "changeme" | mkpasswd -s)" root
-RUN rm -rf /boot /home /root /usr/local /srv && \
-    mkdir -p /var/{home,roothome,srv} /sysroot /boot && \
-    ln -s sysroot/ostree /ostree
+RUN pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com --noconfirm
 
-# Update useradd default to /var/home instead of /home for User Creation
-RUN sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd"
+RUN pacman-key --lsign-key 3056513887B78AEB --noconfirm
 
-# Necessary for `bootc install`
-RUN mkdir -p /usr/lib/ostree && \
-    printf  "[composefs]\nenabled = yes\n[sysroot]\nreadonly = true\n" | \
-    tee "/usr/lib/ostree/prepare-root.conf"
+RUN echo '[chaotic-aur]\n\
+Include = /etc/pacman.d/chaotic-mirrorlist' >> /etc/pacman.conf
 
+RUN pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' --noconfirm
 
-# Create build user
-RUN useradd -m --shell=/bin/bash build && usermod -L build && \
-    echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
-    echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+RUN pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
 
-# Install AUR packages
-USER build
-WORKDIR /home/build
-RUN --mount=type=tmpfs,dst=/tmp \
-    git clone https://aur.archlinux.org/paru-bin.git --single-branch /tmp/paru && \
-    cd /tmp/paru && \
-    makepkg -si --noconfirm && \
-    cd .. && \
-    rm -drf paru-bin
-
-RUN paru -S \
-      aur/steam-devices-git \
-      aur/niri-git \
-      aur/noctalia-shell-git \
-      aur/matugen-bin \
-      aur/input-remapper-bin \
-      aur/vesktop-bin \
+RUN pacman -S \
+      chaotic-aur/niri-git \
+      chaotic-aur/noctalia-shell \
+      chaotic-aur/matugen-git \
+      chaotic-aur/input-remapper-git \
+      chaotic-aur/vesktop-git \
         --noconfirm
-
-USER root
-WORKDIR /
-
-RUN userdel -r build && \
-    rm -drf /home/build && \
-    sed -i '/build ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
-    sed -i '/root ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
-    rm -rf /home/build && \
-    rm -rf \
-        /tmp/* \
-        /var/cache/pacman/pkg/*
 
 ########################################################################################################################################
 # Section 4 - Spawn config files #######################################################################################################
@@ -239,10 +206,10 @@ RestartSec=1 \n\
 WantedBy=graphical-session.target' > /usr/lib/systemd/user/xwayland-satellite.service
 
 # Starts with Niri Session - Services for User Interaction
-RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=plasma-polkit-agent.service" "/usr/lib/systemd/user/niri.service"
-RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=udiskie.service" "/usr/lib/systemd/user/niri.service"
-RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=xwayland-satellite.service" "/usr/lib/systemd/user/niri.service"
-RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=noctalia.service" "/usr/lib/systemd/user/niri.service"
+RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=plasma-polkit-agent.service/" "/usr/lib/systemd/user/niri.service"
+RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=udiskie.service/" "/usr/lib/systemd/user/niri.service"
+RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=xwayland-satellite.service/" "/usr/lib/systemd/user/niri.service"
+RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=noctalia.service/" "/usr/lib/systemd/user/niri.service"
 RUN systemctl enable greetd
 
 RUN echo '[Unit]\n\
@@ -294,6 +261,21 @@ user = "greetd"' >> /etc/greetd/config.toml
 ########################################################################################################################################
 # Section 5 - Final Bootc Setup ########################################################################################################
 ########################################################################################################################################
+
+# Necessary for general behavior expected by image-based systems
+RUN sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd" && \
+    rm -rf /boot /home /root /usr/local /srv && \
+    mkdir -p /var /sysroot /boot /usr/lib/ostree && \
+    ln -s var/opt /opt && \
+    ln -s var/roothome /root && \
+    ln -s var/home /home && \
+    ln -s sysroot/ostree /ostree && \
+    echo "$(for dir in opt usrlocal home srv mnt ; do echo "d /var/$dir 0755 root root -" ; done)" | tee -a /usr/lib/tmpfiles.d/bootc-base-dirs.conf && \
+    echo "d /var/roothome 0700 root root -" | tee -a /usr/lib/tmpfiles.d/bootc-base-dirs.conf && \
+    echo "d /run/media 0755 root root -" | tee -a /usr/lib/tmpfiles.d/bootc-base-dirs.conf && \
+    printf "[composefs]\nenabled = yes\n[sysroot]\nreadonly = true\n" | tee "/usr/lib/ostree/prepare-root.conf"
+
+#Final user setup and lint
 
 RUN pacman -S whois --noconfirm
 RUN usermod -p "$(echo "changeme" | mkpasswd -s)" root
