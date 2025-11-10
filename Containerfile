@@ -46,40 +46,41 @@ ENV DRACUT_NO_XATTR=1
 # Section 1 - Package Installs #########################################################################################################
 ########################################################################################################################################
 
-RUN pacman -Syyuu --noconfirm \
+RUN pacman -Syu --noconfirm \
 # Base packages
       base dracut linux linux-firmware ostree systemd btrfs-progs e2fsprogs xfsprogs binutils dosfstools skopeo dbus dbus-glib glib2 shadow \
 \
 # Media/Install utilities
-       librsvg libglvnd qt6-multimedia-ffmpeg plymouth flatpak acpid aha clinfo ddcutil dmidecode mesa-utils ntfs-3g nvme-cli vulkan-tools wayland-utils \
+      pacman -S --noconfirm librsvg libglvnd qt6-multimedia-ffmpeg plymouth flatpak acpid aha clinfo ddcutil dmidecode mesa-utils ntfs-3g nvme-cli vulkan-tools wayland-utils \
 \
 # Fonts
-      noto-fonts noto-fonts-cjk noto-fonts-emoji \
+      pacman -S --noconfirm noto-fonts noto-fonts-cjk noto-fonts-emoji && \
 \
 # CLI Utilities
-      bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano nvtop openssh powertop \
+      pacman -S --noconfirm bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano nvtop openssh powertop \
       procs ripgrep tldr trash-cli tree usbutils vim wget wl-clipboard ydotool zsh zsh-completions yay unzip \
 \
 # Drivers
-      amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver \
+      pacman -S --noconfirm amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver \
       vpl-gpu-rt vulkan-icd-loader vulkan-intel vulkan-radeon apparmor \
 \
 # Network / VPN / SMB
-      dnsmasq freerdp2 iproute2 iwd libmtp networkmanager-l2tp networkmanager-openconnect networkmanager-openvpn networkmanager-pptp \
+      pacman -S --noconfirm dnsmasq freerdp2 iproute2 iwd libmtp networkmanager-l2tp networkmanager-openconnect networkmanager-openvpn networkmanager-pptp \
       networkmanager-strongswan networkmanager-vpnc nfs-utils nss-mdns samba smbclient ufw \
 \
 # Accessibility
-      espeak-ng orca \
+      pacman -S --noconfirm espeak-ng orca \
 \
 # Pipewire
-      pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber pipewire-jack \
+      pacman -S --noconfirm pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber pipewire-jack \
 \
 # Printer
-      cups cups-browsed gutenprint ipp-usb hplip splix system-config-printer \
+      pacman -S --noconfirm cups cups-browsed gutenprint ipp-usb hplip splix system-config-printer \
 \
 # Desktop Environment needs
-      greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs dolphin \
+      pacman -S --noconfirm greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs dolphin \
       ffmpegthumbs filelight kdegraphics-thumbnailers kdenetwork-filesharing kio-admin kompare purpose chezmoi flatpak \
+\
       ${DEV_DEPS} && \
   pacman -S --clean --noconfirm && \
   rm -rf /var/cache/pacman/pkg/*
@@ -141,12 +142,12 @@ RUN --mount=type=tmpfs,dst=/tmp \
     rm -drf paru-bin
 
 RUN paru -S \
-        aur/steam-devices-git \
-        aur/uxplay \
-        aur/niri-git \
-        aur/noctalia-shell-git \
-        aur/matugen-bin \
-        aur/input-remapper-bin \
+      aur/steam-devices-git \
+      aur/niri-git \
+      aur/noctalia-shell-git \
+      aur/matugen-bin \
+      aur/input-remapper-bin \
+      aur/vesktop-bin \
         --noconfirm
 
 USER root
@@ -178,9 +179,24 @@ org.freedesktop.impl.portal.FileChooser=kde;' > /usr/share/xdg-desktop-portal/ni
       RUN rm -rf /usr/share/xeniaos/zdots && \
       git clone https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots
 
-#Flatpak repo add
+# Flatpak repo add
       RUN mkdir -p /etc/flatpak/remotes.d/ && \
       curl --retry 3 -Lo /etc/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo
+
+# Noctalia Service add
+      RUN echo $'[repo] \n\
+[Unit] \n\
+Description=Noctalia Shell Service \n\
+PartOf=graphical-session.target \n\
+After=graphical-session.target \n\
+ \n\
+[Service] \n\
+ExecStart=qs -p /etc/xdg/quickshell/noctalia-shell \n\
+Restart=on-failure \n\
+RestartSec=1 \n\
+\n\
+[Install] \n\
+WantedBy=graphical-session.target' > /usr/lib/systemd/user/noctalia.service
 
 # OS Release and Update uwu
       RUN echo $'[repo] \n\
@@ -188,6 +204,15 @@ NAME="XeniaOS" \n\
 PRETTY_NAME="XeniaOS" \n\
 DEFAULT_HOSTNAME="XeniaOS" \n\
 HOME_URL="https://github.com/XeniaMeraki/XeniaOS"' > /etc/os-release
+
+# Activate NTSync
+      RUN echo $'[repo] \n\
+      ntsync' > /etc/modules-load.d/ntsync.conf
+
+# CachyOS bbr3 Config Option
+      RUN echo $'[repo] \n\
+net.core.default_qdisc=fq \n\
+net.ipv4.tcp_congestion_control=bbr' > /etc/sysctl.d/99-bbr3.conf
 
 ########################################################################################################################################
 # Section 5 - Final Bootc Setup ########################################################################################################
