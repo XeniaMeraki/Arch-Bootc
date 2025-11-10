@@ -46,7 +46,7 @@ ENV DRACUT_NO_XATTR=1
 # Section 1 - Package Installs #########################################################################################################
 ########################################################################################################################################
 
-      RUN pacman -Syyuu --noconfirm \
+RUN pacman -Syyuu --noconfirm \
 # Base packages
       base dracut linux linux-firmware ostree systemd btrfs-progs e2fsprogs xfsprogs binutils dosfstools skopeo dbus dbus-glib glib2 shadow \
 \
@@ -167,7 +167,7 @@ RUN userdel -r build && \
 ########################################################################################################################################
 
 # Add config for dolphin to Niri and switch away from GTK/Nautilus, use Dolphin for file chooser.
-      RUN echo $'[repo] \n\
+RUN echo '[repo] \n\
 [preferred] \n\
 default=kde;gtk;gnome; \n\
 org.freedesktop.impl.portal.Access=kde; \n\
@@ -176,15 +176,15 @@ org.freedesktop.impl.portal.Secret=gnome-keyring; \n\
 org.freedesktop.impl.portal.FileChooser=kde;' > /usr/share/xdg-desktop-portal/niri-portals.conf
 
 # Use Chezmoi to set up visual assets, avatars, and wallpapers
-      RUN rm -rf /usr/share/xeniaos/zdots && \
+RUN rm -rf /usr/share/xeniaos/zdots && \
       git clone https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots
 
 # Flatpak repo add
-      RUN mkdir -p /etc/flatpak/remotes.d/ && \
+RUN mkdir -p /etc/flatpak/remotes.d/ && \
       curl --retry 3 -Lo /etc/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo
 
 # Noctalia Service add
-      RUN echo $'[repo] \n\
+RUN echo '[repo] \n\
 [Unit] \n\
 Description=Noctalia Shell Service \n\
 PartOf=graphical-session.target \n\
@@ -199,20 +199,69 @@ RestartSec=1 \n\
 WantedBy=graphical-session.target' > /usr/lib/systemd/user/noctalia.service
 
 # OS Release and Update uwu
-      RUN echo $'[repo] \n\
+RUN echo '[repo] \n\
 NAME="XeniaOS" \n\
 PRETTY_NAME="XeniaOS" \n\
 DEFAULT_HOSTNAME="XeniaOS" \n\
 HOME_URL="https://github.com/XeniaMeraki/XeniaOS"' > /etc/os-release
 
 # Activate NTSync
-      RUN echo $'[repo] \n\
+RUN echo '[repo] \n\
       ntsync' > /etc/modules-load.d/ntsync.conf
 
 # CachyOS bbr3 Config Option
-      RUN echo $'[repo] \n\
+RUN echo '[repo] \n\
 net.core.default_qdisc=fq \n\
 net.ipv4.tcp_congestion_control=bbr' > /etc/sysctl.d/99-bbr3.conf
+
+#Starship setup
+RUN echo -e "eval "$(starship init bash)" >> /etc/bash.bashrc
+
+# Automounter Systemd Service
+RUN echo '[repo] \n\
+[Unit] \n\
+Description=Udiskie automount \n\
+PartOf=graphical-session.target \n\
+After=graphical-session.target \n\
+ \n\
+[Service] \n\
+ExecStart=udiskie \n\
+Restart=on-failure \n\
+RestartSec=1 \n\
+\n\
+[Install] \n\
+WantedBy=graphical-session.target' > /usr/lib/systemd/user/udiskie.service
+
+# XWayland Satellite Systemd Service
+RUN echo '[repo] \n\
+[Unit] \n\
+Description=Xwayland satellite \n\
+PartOf=graphical-session.target \n\
+After=graphical-session.target \n\
+ \n\
+[Service] \n\
+ExecStart=xwayland-sattelite \n\
+Restart=on-failure \n\
+RestartSec=1 \n\
+\n\
+[Install] \n\
+WantedBy=graphical-session.target' > /usr/lib/systemd/user/xwayland-satellite.service
+
+# Starts with Niri Session - Services for User Interaction
+RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=plasma-polkit-agent.service" "/usr/lib/systemd/user/niri.service"
+
+RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=udiskie.service" "/usr/lib/systemd/user/niri.service"
+
+RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=xwayland-satellite.service" "/usr/lib/systemd/user/niri.service"
+
+RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=noctalia.service" "/usr/lib/systemd/user/niri.service"
+
+RUN systemctl enable greetd
+
+# Greetd Setup - Login Manager
+RUN echo '[repo] \n\
+#Type Name   ID    GECOS           Home directory  Shell \n\
+u     greetd -     "greetd daemon" /var/lib/greetd' > /usr/lib/sysusers.d/greetd.conf
 
 ########################################################################################################################################
 # Section 5 - Final Bootc Setup ########################################################################################################
