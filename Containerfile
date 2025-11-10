@@ -120,7 +120,6 @@ RUN pacman -Sy --noconfirm
 RUN pacman -S \
       chaotic-aur/niri-git \
       chaotic-aur/noctalia-shell \
-      chaotic-aur/matugen-git \
       chaotic-aur/input-remapper-git \
       chaotic-aur/vesktop-git \
         --noconfirm
