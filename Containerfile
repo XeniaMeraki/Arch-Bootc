@@ -170,8 +170,11 @@ org.freedesktop.impl.portal.Secret=gnome-keyring; \n\
 org.freedesktop.impl.portal.FileChooser=kde;' > /usr/share/xdg-desktop-portal/niri-portals.conf
 
 # Use Chezmoi to set up visual assets, avatars, and wallpapers
-RUN rm -rf /usr/share/xeniaos/zdots && \
+RUN mkdir -p /usr/share/xeniaos/ && \
       git clone https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots
+
+RUN mkdir -p /usr/share/xeniaos/ && \
+      git clone https://github.com/XeniaMeraki/XeniaOS-G-Euphoria /usr/share/xeniaos/wallpapers
 
 # Flatpak repo add
 RUN mkdir -p /etc/flatpak/remotes.d/ && \
