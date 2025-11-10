@@ -46,39 +46,39 @@ ENV DRACUT_NO_XATTR=1
 # Section 1 - Package Installs #########################################################################################################
 ########################################################################################################################################
 
-RUN pacman -Syu --noconfirm \
+      RUN pacman -Syu --noconfirm \
 # Base packages
       base dracut linux linux-firmware ostree systemd btrfs-progs e2fsprogs xfsprogs binutils dosfstools skopeo dbus dbus-glib glib2 shadow \
 \
 # Media/Install utilities
-      pacman -S --noconfirm librsvg libglvnd qt6-multimedia-ffmpeg plymouth flatpak acpid aha clinfo ddcutil dmidecode mesa-utils ntfs-3g nvme-cli vulkan-tools wayland-utils \
+      RUN pacman -S --noconfirm librsvg libglvnd qt6-multimedia-ffmpeg plymouth flatpak acpid aha clinfo ddcutil dmidecode mesa-utils ntfs-3g nvme-cli vulkan-tools wayland-utils \
 \
 # Fonts
-      pacman -S --noconfirm noto-fonts noto-fonts-cjk noto-fonts-emoji && \
+      RUN pacman -S --noconfirm noto-fonts noto-fonts-cjk noto-fonts-emoji && \
 \
 # CLI Utilities
-      pacman -S --noconfirm bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano nvtop openssh powertop \
+      RUN pacman -S --noconfirm bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano nvtop openssh powertop \
       procs ripgrep tldr trash-cli tree usbutils vim wget wl-clipboard ydotool zsh zsh-completions yay unzip \
 \
 # Drivers
-      pacman -S --noconfirm amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver \
+      RUN pacman -S --noconfirm amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver \
       vpl-gpu-rt vulkan-icd-loader vulkan-intel vulkan-radeon apparmor \
 \
 # Network / VPN / SMB
-      pacman -S --noconfirm dnsmasq freerdp2 iproute2 iwd libmtp networkmanager-l2tp networkmanager-openconnect networkmanager-openvpn networkmanager-pptp \
+      RUN pacman -S --noconfirm dnsmasq freerdp2 iproute2 iwd libmtp networkmanager-l2tp networkmanager-openconnect networkmanager-openvpn networkmanager-pptp \
       networkmanager-strongswan networkmanager-vpnc nfs-utils nss-mdns samba smbclient ufw \
 \
 # Accessibility
-      pacman -S --noconfirm espeak-ng orca \
+      RUN pacman -S --noconfirm espeak-ng orca \
 \
 # Pipewire
-      pacman -S --noconfirm pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber pipewire-jack \
+      RUN pacman -S --noconfirm pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber pipewire-jack \
 \
 # Printer
-      pacman -S --noconfirm cups cups-browsed gutenprint ipp-usb hplip splix system-config-printer \
+      RUN pacman -S --noconfirm cups cups-browsed gutenprint ipp-usb hplip splix system-config-printer \
 \
 # Desktop Environment needs
-      pacman -S --noconfirm greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs dolphin \
+      RUN pacman -S --noconfirm greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs dolphin \
       ffmpegthumbs filelight kdegraphics-thumbnailers kdenetwork-filesharing kio-admin kompare purpose chezmoi flatpak \
 \
       ${DEV_DEPS} && \
