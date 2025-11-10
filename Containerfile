@@ -51,34 +51,34 @@ ENV DRACUT_NO_XATTR=1
       base dracut linux linux-firmware ostree systemd btrfs-progs e2fsprogs xfsprogs binutils dosfstools skopeo dbus dbus-glib glib2 shadow \
 \
 # Media/Install utilities
-      RUN pacman -S --noconfirm librsvg libglvnd qt6-multimedia-ffmpeg plymouth flatpak acpid aha clinfo ddcutil dmidecode mesa-utils ntfs-3g nvme-cli vulkan-tools wayland-utils \
+      librsvg libglvnd qt6-multimedia-ffmpeg plymouth flatpak acpid aha clinfo ddcutil dmidecode mesa-utils ntfs-3g nvme-cli vulkan-tools wayland-utils \
 \
 # Fonts
-      RUN pacman -S --noconfirm noto-fonts noto-fonts-cjk noto-fonts-emoji && \
+      noto-fonts noto-fonts-cjk noto-fonts-emoji \
 \
 # CLI Utilities
-      RUN pacman -S --noconfirm bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano nvtop openssh powertop \
+      bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano nvtop openssh powertop \
       procs ripgrep tldr trash-cli tree usbutils vim wget wl-clipboard ydotool zsh zsh-completions yay unzip \
 \
 # Drivers
-      RUN pacman -S --noconfirm amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver \
+      amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver \
       vpl-gpu-rt vulkan-icd-loader vulkan-intel vulkan-radeon apparmor \
 \
 # Network / VPN / SMB
-      RUN pacman -S --noconfirm dnsmasq freerdp2 iproute2 iwd libmtp networkmanager-l2tp networkmanager-openconnect networkmanager-openvpn networkmanager-pptp \
+      dnsmasq freerdp2 iproute2 iwd libmtp networkmanager-l2tp networkmanager-openconnect networkmanager-openvpn networkmanager-pptp \
       networkmanager-strongswan networkmanager-vpnc nfs-utils nss-mdns samba smbclient ufw \
 \
 # Accessibility
-      RUN pacman -S --noconfirm espeak-ng orca \
+      espeak-ng orca \
 \
 # Pipewire
-      RUN pacman -S --noconfirm pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber pipewire-jack \
+      pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber pipewire-jack \
 \
 # Printer
-      RUN pacman -S --noconfirm cups cups-browsed gutenprint ipp-usb hplip splix system-config-printer \
+      cups cups-browsed gutenprint ipp-usb hplip splix system-config-printer \
 \
 # Desktop Environment needs
-      RUN pacman -S --noconfirm greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs dolphin \
+      greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs dolphin \
       ffmpegthumbs filelight kdegraphics-thumbnailers kdenetwork-filesharing kio-admin kompare purpose chezmoi flatpak \
 \
       ${DEV_DEPS} && \
