@@ -148,6 +148,10 @@ org.freedesktop.impl.portal.FileChooser=kde;' > /usr/share/xdg-desktop-portal/ni
 RUN mkdir -p /usr/share/xeniaos/ && \
       git clone https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots
 
+# Place XeniaOS logo at plymouth folder location to appear on boot
+RUN curl -O https://github.com/XeniaMeraki/XeniaOS-G-Euphoria/blob/main/xeniaos_text_logo_whitever_delphic_melody.svg \
+      > /usr/share/plymouth/themes/spinner/watermark.png
+
 RUN mkdir -p /usr/share/xeniaos/ && \
       git clone https://github.com/XeniaMeraki/XeniaOS-G-Euphoria /usr/share/xeniaos/wallpapers
 
