@@ -284,7 +284,7 @@ user = "greetd"' > /etc/greetd/config.toml
 
 RUN systemctl enable --global chezmoi-init.service chezmoi-update.timer
 
-RUN systemctl enable dms.service
+RUN systemctl enable --global dms.service
 
 ########################################################################################################################################
 # Section 5 - Final Bootc Setup ########################################################################################################
