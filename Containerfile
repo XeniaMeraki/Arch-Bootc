@@ -251,12 +251,12 @@ RUN echo -ne '[Unit]\n\
 Description=Fix groups\n\
 Wants=local-fs.target\n\
 After=local-fs.target\n\
-ConditionPathExists=!/etc/.xeniaos-fix-group-done\n\
+ConditionPathExists=!/var/cache/.xeniaos-fix-group-done\n\
 [Service]\n\
 Type=oneshot\n\
-ExecStart=/usr/bin/cp /usr/etc/group /etc/group\n\
-ExecStart=/usr/bin/cp /usr/etc/group- /etc/group-\n\
-ExecStart=/usr/bin/touch /etc/.xeniaos-fix-group-done\n\
+ExecStart=cat /usr/lib/sysusers.d/*.conf | grep -e "^g" | grep -v -e "^#" | awk "NF" | awk '\''{print $2}'\'' | xargs -I{} sed "/{}/d" /etc/group\n\
+ExecStart=cat /usr/lib/sysusers.d/*.conf | grep -e "^g" | grep -v -e "^#" | awk "NF" | awk '\''{print $2}'\'' | xargs -I{} sed "/{}/d" /etc/gshadow\n\
+ExecStart=/usr/bin/touch /var/cache/.xeniaos-fix-group-done\n\
 [Install]\n\
 WantedBy=default.target multi-user.target' > /usr/lib/systemd/system/xeniaos-group-fix.service
 
