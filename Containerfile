@@ -272,7 +272,7 @@ RUN echo -ne '[terminal]\n\
 vt = 1\n\
 \n\
 [default_session]\n\
-command = "tuigreet --time --user-menu --greeting "Welcome to XeniaOS :3c" --remember --remember-session --asterisks --power-shutdown "systemctl poweroff" --power-reboot "systemctl reboot" --power-no-setsid --width 140 --theme border=magenta;text=magenta;prompt=lightmagenta;time=magenta;action=lightmagenta;button=magenta;container=gray;input=magenta --cmd niri-session"\n\
+command = "tuigreet --time --user-menu --remember --remember-session --asterisks --power-no-setsid --width 140 --theme border=magenta;text=magenta;prompt=lightmagenta;time=magenta;action=lightmagenta;button=magenta;container=gray;input=magenta --cmd niri-session"\n\
 user = "greetd"' > /etc/greetd/config.toml
 
 ########################################################################################################################################
