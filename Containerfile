@@ -247,6 +247,8 @@ Type=oneshot" >> /usr/lib/systemd/user/chezmoi-update.service
 
 RUN mkdir -p /usr/lib/systemd/system-preset /usr/lib/systemd/system
 
+RUN echo -ne '#!/bin/sh\ncat /usr/lib/sysusers.d/*.conf | grep -e "^g" | grep -v -e "^#" | awk "NF" | awk '\''{print $2}'\'' | xargs -I{} sed -i "/{}/d" $1' > /usr/libexec/xeniaos-group-fix
+RUN chmod +x /usr/libexec/xeniaos-group-fix
 RUN echo -ne '[Unit]\n\
 Description=Fix groups\n\
 Wants=local-fs.target\n\
@@ -254,8 +256,8 @@ After=local-fs.target\n\
 ConditionPathExists=!/var/cache/.xeniaos-fix-group-done\n\
 [Service]\n\
 Type=oneshot\n\
-ExecStart=cat /usr/lib/sysusers.d/*.conf | grep -e "^g" | grep -v -e "^#" | awk "NF" | awk '\''{print $2}'\'' | xargs -I{} sed "/{}/d" /etc/group\n\
-ExecStart=cat /usr/lib/sysusers.d/*.conf | grep -e "^g" | grep -v -e "^#" | awk "NF" | awk '\''{print $2}'\'' | xargs -I{} sed "/{}/d" /etc/gshadow\n\
+ExecStart=/usr/libexec/xeniaos-group-fix /etc/group\n\
+ExecStart=/usr/libexec/xeniaos-group-fix /etc/gshadow\n\
 ExecStart=/usr/bin/touch /var/cache/.xeniaos-fix-group-done\n\
 [Install]\n\
 WantedBy=default.target multi-user.target' > /usr/lib/systemd/system/xeniaos-group-fix.service
