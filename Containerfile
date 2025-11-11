@@ -199,6 +199,20 @@ RestartSec=1 \n\
 [Install] \n\
 WantedBy=graphical-session.target' > /usr/lib/systemd/user/xwayland-satellite.service
 
+# DMS Service Systemd Service
+RUN echo -ne '[Unit]\n\
+Description=Shell Service\n\
+PartOf=graphical-session.target\n\
+After=graphical-session.target\n\
+\n\
+[Service]\n\
+ExecStart=dms run\n\
+Restart=on-failure\n\
+RestartSec=1\n\
+\n\
+[Install]\n\
+WantedBy=graphical-session.target' > /usr/lib/systemd/user/dms.service
+
 # Starts with Niri Session - Services for User Interaction
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=plasma-polkit-agent.service/" "/usr/lib/systemd/user/niri.service"
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=udiskie.service/" "/usr/lib/systemd/user/niri.service"
