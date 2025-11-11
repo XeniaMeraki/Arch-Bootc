@@ -47,7 +47,7 @@ RUN pacman -Syyuu --noconfirm \
 \
 # Media/Install utilities
       librsvg libglvnd qt6-multimedia-ffmpeg plymouth flatpak acpid aha clinfo ddcutil dmidecode mesa-utils ntfs-3g nvme-cli vulkan-tools wayland-utils \
-      haruna pinta \
+      haruna \
 \
 # Fonts
       noto-fonts noto-fonts-cjk noto-fonts-emoji \
@@ -129,6 +129,7 @@ RUN pacman -S \
       chaotic-aur/obs-studio-git \
       chaotic-aur/dms-shell-niri-git \
       chaotic-aur/krita-git \
+      chaotic-aur/pinta \
         --noconfirm
 
 ########################################################################################################################################
