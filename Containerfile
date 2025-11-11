@@ -132,6 +132,25 @@ RUN pacman -S \
       chaotic-aur/pinta \
         --noconfirm
 
+# Install AUR packages
+USER build
+WORKDIR /home/build
+RUN --mount=type=tmpfs,dst=/tmp \
+    git clone https://aur.archlinux.org/paru-bin.git --single-branch /tmp/paru && \
+    cd /tmp/paru && \
+    makepkg -si --noconfirm && \
+    cd .. && \
+    rm -drf paru-bin
+
+RUN paru -S \
+        aur/greetd-dms-greeter-git \
+        --noconfirm
+
+USER root
+WORKDIR /
+
+RUN systemctl enable greetd
+
 ########################################################################################################################################
 # Section 4 - Spawn config files #######################################################################################################
 ########################################################################################################################################
