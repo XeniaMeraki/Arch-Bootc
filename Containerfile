@@ -76,7 +76,7 @@ RUN pacman -Syyuu --noconfirm \
 # Desktop Environment needs
       greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs dolphin \
       ffmpegthumbs filelight kdegraphics-thumbnailers kdenetwork-filesharing kio-admin kompare purpose chezmoi flatpak matugen \
-      accountsservice quickshell dgop dsearch cliphist cava \
+      accountsservice quickshell dgop cliphist cava \
 \
       ${DEV_DEPS} && \
   pacman -S --clean --noconfirm && \
