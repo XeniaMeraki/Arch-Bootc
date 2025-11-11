@@ -47,7 +47,7 @@ RUN pacman -Syyuu --noconfirm \
 \
 # Media/Install utilities
       librsvg libglvnd qt6-multimedia-ffmpeg plymouth flatpak acpid aha clinfo ddcutil dmidecode mesa-utils ntfs-3g nvme-cli vulkan-tools wayland-utils \
-      haruna-git pinta \
+      haruna pinta \
 \
 # Fonts
       noto-fonts noto-fonts-cjk noto-fonts-emoji \
