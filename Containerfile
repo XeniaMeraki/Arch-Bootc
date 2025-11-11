@@ -154,17 +154,6 @@ RUN mkdir -p /usr/share/xeniaos/ && \
 RUN mkdir -p /etc/flatpak/remotes.d/ && \
       curl --retry 3 -Lo /etc/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo
 
-# Set up DMS as quickshell, shell, theming, backend, login manager
-# Set up DMS as frontend (QML)
-RUN mkdir -p ~/.config/quickshell \
-git clone https://github.com/AvengeMedia/DankMaterialShell.git ~/.config/quickshell/dms
-
-# Set up DMS as backend (CLI)
-RUN mkdir ~/repos && cd ~/repos \
-git clone https://github.com/AvengeMedia/danklinux.git \
-cd danklinux \
-make && sudo make install
-
 # OS Release and Update uwu
 RUN echo -ne 'NAME="XeniaOS" \n\
 PRETTY_NAME="XeniaOS" \n\
@@ -214,7 +203,7 @@ RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=plasma-polkit-agent.service/" "/usr/lib/s
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=udiskie.service/" "/usr/lib/systemd/user/niri.service"
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=xwayland-satellite.service/" "/usr/lib/systemd/user/niri.service"
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=dms.service/" "/usr/lib/systemd/user/niri.service"
-RUN systemctl --user enable dms.service
+RUN systemctl enable dms.service
 
 RUN echo -ne '[Unit]\n\
 Description=Initializes Chezmoi if directory is missing\n\
@@ -266,6 +255,18 @@ OnUnitInactiveSec=1d\n\
 \n\
 [Install]\n\
 WantedBy=timers.target' >> /usr/lib/systemd/user/chezmoi-update.timer
+
+# Greetd Setup - Login Manager
+RUN echo 'u     greetd -     "greetd daemon" /var/lib/greetd' > /usr/lib/sysusers.d/greetd.conf
+RUN echo 'Z  /var/lib/greetd -    greetd greetd -   -' > /usr/lib/tmpfiles.d/greetd.conf
+
+# Login DMS Greeter setup
+RUN echo -ne '[terminal]\n\
+vt = 1\n\
+\n\
+[default_session]\n\
+command = "dms-greeter --command-niri --time --user-menu --remember --remember-session --asterisks --power-no-setsid --width 140 --theme border=magenta;text=magenta;prompt=lightmagenta;time=magenta;action=lightmagenta;button=magenta;container=gray;input=magenta --cmd niri-session"\n\
+user = "greetd"' > /etc/greetd/config.toml
 
 ########################################################################################################################################
 # Section 5 - Final Bootc Setup ########################################################################################################
