@@ -204,7 +204,6 @@ RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=plasma-polkit-agent.service/" "/usr/lib/s
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=udiskie.service/" "/usr/lib/systemd/user/niri.service"
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=xwayland-satellite.service/" "/usr/lib/systemd/user/niri.service"
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=dms.service/" "/usr/lib/systemd/user/niri.service"
-RUN systemctl enable dms.service
 
 RUN echo -ne '[Unit]\n\
 Description=Initializes Chezmoi if directory is missing\n\
@@ -270,6 +269,8 @@ command = "dms-greeter --command niri" \n\
 user = "greetd"' > /etc/greetd/config.toml
 
 RUN systemctl enable --global chezmoi-init.service chezmoi-update.timer
+
+RUN systemctl enable dms.service
 
 ########################################################################################################################################
 # Section 5 - Final Bootc Setup ########################################################################################################
