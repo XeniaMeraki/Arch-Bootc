@@ -250,7 +250,7 @@ ExecStart=/usr/bin/touch /etc/.xeniaos-fix-group-done\n\
 WantedBy=default.target multi-user.target' > /usr/lib/systemd/system/xeniaos-group-fix.service
 
 RUN echo "enable xeniaos-group-fix.service" > /usr/lib/systemd/system-preset/01-xeniaos-group-fix.preset
-
+RUN systemctl enable xeniaos-group-fix.service
 RUN echo -ne '[Unit]\n\
 Description=Timer for Chezmoi Update\n\
 # This service will only execute for a user with an existing chezmoi directory\n\
