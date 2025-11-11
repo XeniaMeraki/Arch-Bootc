@@ -225,14 +225,14 @@ Type=oneshot\n\
 [Install]\n\
 WantedBy=default.target' >> /usr/lib/systemd/user/chezmoi-init.service
 
-RUN echo '[Unit]\n\
+RUN echo "[Unit]\n\
 Description=Chezmoi Update\n\
 \n\
 [Service]\n\
 ExecStart=mkdir -p %h/.config/xeniaos/chezmoi\n\
 ExecStart=touch %h/.config/xeniaos/chezmoi/chezmoi.toml\n\
-ExecStart=sh -c 'yes s | chezmoi apply --no-tty --keep-going -S /usr/share/xeniaos/zdots --verbose --config %h/.config/xeniaos/chezmoi/chezmoi.toml\n\
-Type=oneshot' >> /usr/lib/systemd/user/chezmoi-update.service
+ExecStart=sh -c 'yes s | chezmoi apply --no-tty --keep-going -S /usr/share/xeniaos/zdots --verbose --config %h/.config/xeniaos/chezmoi/chezmoi.toml'\n\
+Type=oneshot" >> /usr/lib/systemd/user/chezmoi-update.service
 
 RUN echo '[Unit]\n\
 Description=Timer for Chezmoi Update\n\
