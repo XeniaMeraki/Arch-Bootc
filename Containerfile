@@ -91,7 +91,7 @@ RUN mkdir -p "/usr/share/fonts/Maple Mono" \
 
 # Workaround due to dracut version bump, please remove eventually
 # FIXME: remove
-RUN echo -e "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/lib/systemd/system\n" | tee /etc/dracut.conf.d/fix-bootc.conf
+RUN printf "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/lib/systemd/system\n" | tee /etc/dracut.conf.d/fix-bootc.conf
 
 RUN --mount=type=tmpfs,dst=/tmp --mount=type=tmpfs,dst=/root \
     pacman -S --noconfirm base-devel git rust && \
@@ -129,7 +129,7 @@ RUN pacman -S \
 ########################################################################################################################################
 
 # Add config for dolphin to Niri and switch away from GTK/Nautilus, use Dolphin for file chooser.
-RUN echo '[preferred] \n\
+RUN printf '[preferred] \n\
 default=kde;gtk;gnome; \n\
 org.freedesktop.impl.portal.Access=kde; \n\
 org.freedesktop.impl.portal.Notification=kde; \n\
@@ -148,7 +148,7 @@ RUN mkdir -p /etc/flatpak/remotes.d/ && \
       curl --retry 3 -Lo /etc/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo
 
 # Noctalia Service add
-RUN echo '[Unit] \n\
+RUN printf '[Unit] \n\
 Description=Noctalia Shell Service \n\
 PartOf=graphical-session.target \n\
 After=graphical-session.target \n\
@@ -162,7 +162,7 @@ RestartSec=1 \n\
 WantedBy=graphical-session.target' > /usr/lib/systemd/user/noctalia.service
 
 # OS Release and Update uwu
-RUN echo 'NAME="XeniaOS" \n\
+RUN printf 'NAME="XeniaOS" \n\
 PRETTY_NAME="XeniaOS" \n\
 DEFAULT_HOSTNAME="XeniaOS" \n\
 HOME_URL="https://github.com/XeniaMeraki/XeniaOS"' > /etc/os-release
@@ -171,14 +171,14 @@ HOME_URL="https://github.com/XeniaMeraki/XeniaOS"' > /etc/os-release
 RUN echo 'ntsync' > /etc/modules-load.d/ntsync.conf
 
 # CachyOS bbr3 Config Option
-RUN echo 'net.core.default_qdisc=fq \n\
+RUN printf 'net.core.default_qdisc=fq \n\
 net.ipv4.tcp_congestion_control=bbr' > /etc/sysctl.d/99-bbr3.conf
 
 #Starship setup
 RUN echo 'eval "$(starship init bash)"' >> /etc/bash.bashrc
 
 # Automounter Systemd Service
-RUN echo '[Unit] \n\
+RUN printf '[Unit] \n\
 Description=Udiskie automount \n\
 PartOf=graphical-session.target \n\
 After=graphical-session.target \n\
@@ -192,7 +192,7 @@ RestartSec=1 \n\
 WantedBy=graphical-session.target' > /usr/lib/systemd/user/udiskie.service
 
 # XWayland Satellite Systemd Service
-RUN echo '[Unit] \n\
+RUN printf '[Unit] \n\
 Description=Xwayland satellite \n\
 PartOf=graphical-session.target \n\
 After=graphical-session.target \n\
@@ -212,7 +212,7 @@ RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=xwayland-satellite.service/" "/usr/lib/sy
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=noctalia.service/" "/usr/lib/systemd/user/niri.service"
 RUN systemctl enable greetd
 
-RUN echo '[Unit]\n\
+RUN printf '[Unit]\n\
 Description=Initializes Chezmoi if directory is missing\n\
 ConditionPathExists=!%h/.config/xeniaos/chezmoi\n\
 \n\
@@ -225,7 +225,7 @@ Type=oneshot\n\
 [Install]\n\
 WantedBy=default.target' >> /usr/lib/systemd/user/chezmoi-init.service
 
-RUN echo "[Unit]\n\
+RUN printf "[Unit]\n\
 Description=Chezmoi Update\n\
 \n\
 [Service]\n\
@@ -247,16 +247,16 @@ OnUnitInactiveSec=1d\n\
 WantedBy=timers.target' >> /usr/lib/systemd/user/chezmoi-update.timer
 
 # Greetd Setup - Login Manager
-RUN echo 'u     greetd -     "greetd daemon" /var/lib/greetd' >> /usr/lib/sysusers.d/greetd.conf
-RUN echo 'Z  /var/lib/greetd -    greetd greetd -   -' >> /usr/lib/tmpfiles.d/greetd.conf
+RUN echo 'u     greetd -     "greetd daemon" /var/lib/greetd' > /usr/lib/sysusers.d/greetd.conf
+RUN echo 'Z  /var/lib/greetd -    greetd greetd -   -' > /usr/lib/tmpfiles.d/greetd.conf
 
 # Login tui setup
-RUN echo '[terminal]\n\
+RUN printf '[terminal]\n\
 vt = 1\n\
 \n\
 [default_session]\n\
 command = "tuigreet --time --user-menu --greeting "Welcome to XeniaOS :3c" --remember --remember-session --asterisks --power-shutdown "systemctl poweroff" --power-reboot "systemctl reboot" --power-no-setsid --width 140 --theme border=magenta;text=magenta;prompt=lightmagenta;time=magenta;action=lightmagenta;button=magenta;container=gray;input=magenta --cmd niri-session"\n\
-user = "greetd"' >> /etc/greetd/config.toml
+user = "greetd"' > /etc/greetd/config.toml
 
 ########################################################################################################################################
 # Section 5 - Final Bootc Setup ########################################################################################################
