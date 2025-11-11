@@ -127,7 +127,7 @@ RUN pacman -S \
       chaotic-aur/protonup-qt \
       chaotic-aur/obs-vkcapture-git \
       chaotic-aur/obs-studio-git \
-      chaotic-aur/dms-shell-niri-git \
+      chaotic-aur/dms-shell-git \
       chaotic-aur/krita-git \
       chaotic-aur/pinta \
         --noconfirm
