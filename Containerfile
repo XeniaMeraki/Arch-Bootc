@@ -234,6 +234,23 @@ ExecStart=touch %h/.config/xeniaos/chezmoi/chezmoi.toml\n\
 ExecStart=sh -c 'yes s | chezmoi apply --no-tty --keep-going -S /usr/share/xeniaos/zdots --verbose --config %h/.config/xeniaos/chezmoi/chezmoi.toml'\n\
 Type=oneshot" >> /usr/lib/systemd/user/chezmoi-update.service
 
+RUN mkdir -p /usr/lib/systemd/system-preset /usr/lib/systemd/system
+
+RUN echo -ne '[Unit]\n\
+Description=Fix groups\n\
+Wants=local-fs.target\n\
+After=local-fs.target\n\
+ConditionPathExists=!/etc/.xeniaos-fix-group-done\n\
+[Service]\n\
+Type=oneshot\n\
+ExecStart=/usr/bin/cp /usr/etc/group /etc/group\n\
+ExecStart=/usr/bin/cp /usr/etc/group- /etc/group-\n\
+ExecStart=/usr/bin/touch /etc/.xeniaos-fix-group-done\n\
+[Install]\n\
+WantedBy=default.target multi-user.target' > /usr/lib/systemd/system/xeniaos-group-fix.service
+
+RUN echo "enable xeniaos-group-fix.service" > /usr/lib/systemd/system-preset/01-xeniaos-group-fix.preset
+RUN systemctl enable xeniaos-group-fix.service
 RUN echo -ne '[Unit]\n\
 Description=Timer for Chezmoi Update\n\
 # This service will only execute for a user with an existing chezmoi directory\n\
