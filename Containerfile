@@ -184,7 +184,7 @@ RUN mkdir -p /usr/share/xeniaos/ && \
 # Place XeniaOS logo at plymouth folder location to appear on boot
 RUN mkdir -p /usr/share/plymouth/themes/spinner/
 
-curl -O https://github.com/XeniaMeraki/XeniaOS-G-Euphoria/blob/main/xeniaos_text_logo_whitever_delphic_melody.svg > /usr/share/plymouth/themes/spinner/watermark.png
+RUN curl -O https://github.com/XeniaMeraki/XeniaOS-G-Euphoria/blob/main/xeniaos_text_logo_whitever_delphic_melody.svg > /usr/share/plymouth/themes/spinner/watermark.png
 
 RUN mkdir -p /usr/share/xeniaos/ && \
       git clone https://github.com/XeniaMeraki/XeniaOS-G-Euphoria /usr/share/xeniaos/wallpapers
