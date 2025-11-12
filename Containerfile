@@ -279,6 +279,10 @@ OnUnitInactiveSec=1d\n\
 [Install]\n\
 WantedBy=timers.target' >> /usr/lib/systemd/user/chezmoi-update.timer
 
+# Greetd Setup - Login Manager
+RUN echo 'u     greetd -     "greetd daemon" /var/lib/greetd' > /usr/lib/sysusers.d/greetd.conf
+RUN echo 'Z  /var/lib/greetd -    greetd greetd -   -' > /usr/lib/tmpfiles.d/greetd.conf
+
 # Login tui setup
 RUN echo -ne '[terminal]\n\
 vt = 1\n\
