@@ -182,8 +182,9 @@ RUN mkdir -p /usr/share/xeniaos/ && \
       git clone https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots
 
 # Place XeniaOS logo at plymouth folder location to appear on boot
-RUN curl -O https://github.com/XeniaMeraki/XeniaOS-G-Euphoria/blob/main/xeniaos_text_logo_whitever_delphic_melody.svg \
-      > /usr/share/plymouth/themes/spinner/watermark.png
+RUN mkdir -p /usr/share/plymouth/themes/spinner/
+
+curl -O https://github.com/XeniaMeraki/XeniaOS-G-Euphoria/blob/main/xeniaos_text_logo_whitever_delphic_melody.svg > /usr/share/plymouth/themes/spinner/watermark.png
 
 RUN mkdir -p /usr/share/xeniaos/ && \
       git clone https://github.com/XeniaMeraki/XeniaOS-G-Euphoria /usr/share/xeniaos/wallpapers
@@ -309,16 +310,12 @@ OnUnitInactiveSec=1d\n\
 [Install]\n\
 WantedBy=timers.target' >> /usr/lib/systemd/user/chezmoi-update.timer
 
-# Greetd Setup - Login Manager
-RUN echo 'u     greetd -     "greetd daemon" /var/lib/greetd' > /usr/lib/sysusers.d/greetd.conf
-RUN echo 'Z  /var/lib/greetd -    greetd greetd -   -' > /usr/lib/tmpfiles.d/greetd.conf
-
-# Login DMS Greeter setup
+# Login tui setup
 RUN echo -ne '[terminal]\n\
 vt = 1\n\
 \n\
 [default_session]\n\
-command = "dms-greeter --command niri" \n\
+command = "tuigreet --time --user-menu --remember --remember-session --asterisks --power-no-setsid --width 140 --theme border=magenta;text=magenta;prompt=lightmagenta;time=magenta;action=lightmagenta;button=magenta;container=gray;input=magenta --cmd niri-session"\n\
 user = "greetd"' > /etc/greetd/config.toml
 
 RUN systemctl enable --global chezmoi-init.service chezmoi-update.timer
