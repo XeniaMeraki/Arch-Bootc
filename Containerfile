@@ -54,7 +54,7 @@ RUN pacman -Syyuu --noconfirm \
 \
 # CLI Utilities
       bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano nvtop openssh powertop \
-      procs ripgrep tldr trash-cli tree usbutils vim wget wl-clipboard ydotool zsh zsh-completions yay unzip \
+      procs ripgrep tldr trash-cli tree usbutils vim wget wl-clipboard ydotool zsh zsh-completions yay unzip ptyxis \
 \
 # Drivers
       amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver \
