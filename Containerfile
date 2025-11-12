@@ -5,7 +5,7 @@
 #   @@@){)))))())))))))                              ☆ﾟ.Flatpaks | FOSS.ﾟ☆
 #    @r))))@oooo)))))h)))[                                 
 #    rr)))joooooo(xooooo@)
-# rrrxr))r/l;,,,z@{,,,,,@@                         One containerfile to rule them all!
+# rrrxr))r/l;,,,z@{,,,,,@@                         One container file to rule them all!
 #   rr  )        v  @;@rx                             Trans rights are human rights!
 #     rrr)    \__^__/   ji                                
 #      rj].           . r
@@ -47,14 +47,15 @@ RUN pacman -Syyuu --noconfirm \
 \
 # Media/Install utilities
       librsvg libglvnd qt6-multimedia-ffmpeg plymouth flatpak acpid aha clinfo ddcutil dmidecode mesa-utils ntfs-3g nvme-cli vulkan-tools wayland-utils \
-      haruna \
+      haruna playerctl \
 \
 # Fonts
       noto-fonts noto-fonts-cjk noto-fonts-emoji \
 \
 # CLI Utilities
-      bash-completion bat busybox duf hyfetch fd gping grml-zsh-config htop jq less lsof mcfly nano nvtop openssh powertop \
-      procs ripgrep tldr trash-cli tree usbutils vim wget wl-clipboard ydotool zsh zsh-completions yay unzip ptyxis \
+      bash-completion bat busybox duf fastfetch gping grml-zsh-config htop jq less lsof mcfly nano nvtop openssh powertop \
+      procs ripgrep tldr trash-cli tree usbutils vim wget wl-clipboard ydotool zsh zsh-completions yay unzip ptyxis glibc-locales \
+      starship tuned-ppd tuned hyfetch \
 \
 # Drivers
       amd-ucode intel-ucode edk2-shell efibootmgr shim mesa libva-intel-driver libva-mesa-driver \
@@ -62,7 +63,7 @@ RUN pacman -Syyuu --noconfirm \
 \
 # Network / VPN / SMB
       dnsmasq freerdp2 iproute2 iwd libmtp networkmanager-l2tp networkmanager-openconnect networkmanager-openvpn networkmanager-pptp \
-      networkmanager-strongswan networkmanager-vpnc nfs-utils nss-mdns samba smbclient ufw \
+      networkmanager-strongswan networkmanager-vpnc nfs-utils nss-mdns samba smbclient networkmanager firewalld \
 \
 # Accessibility
       espeak-ng orca \
@@ -74,9 +75,11 @@ RUN pacman -Syyuu --noconfirm \
       cups cups-browsed gutenprint ipp-usb hplip splix system-config-printer \
 \
 # Desktop Environment needs
-      greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs dolphin \
+      greetd udiskie polkit-kde-agent xwayland-satellite greetd-tuigreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gnome \
       ffmpegthumbs filelight kdegraphics-thumbnailers kdenetwork-filesharing kio-admin kompare purpose chezmoi flatpak matugen \
-      accountsservice quickshell dgop cliphist cava \
+      accountsservice quickshell dgop cliphist cava dolphin qt6ct breeze brightnessctl wlsunset ddcutil \
+# User frontend programs/apps
+      kate ark gwenview kdenlive okular steam \
 \
       ${DEV_DEPS} && \
   pacman -S --clean --noconfirm && \
@@ -138,6 +141,15 @@ RUN systemctl enable greetd
 # Section 4 - Spawn config files #######################################################################################################
 ########################################################################################################################################
 
+#Set up zram
+RUN printf "[zram0]\nzram-size = min(ram, 8192)" | tee /usr/lib/systemd/zram-generator.conf
+RUN echo "enable systemd-resolved.service" | tee /usr/lib/systemd/system-preset/91-resolved-default.preset
+RUN echo "L /etc/resolv.conf - - - - ../run/systemd/resolve/stub-resolv.conf" | tee /usr/lib/tmpfiles.d/resolved-default.conf
+RUN systemctl preset systemd-resolved.service
+
+#Enable wifi, firewall, power profiles
+RUN systemctl enable NetworkManager tuned tuned-ppd firewalld
+
 # Add config for dolphin to Niri and switch away from GTK/Nautilus, use Dolphin for file chooser.
 RUN echo -ne '[preferred] \n\
 default=kde;gtk;gnome; \n\
@@ -153,7 +165,7 @@ RUN mkdir -p /usr/share/xeniaos/ && \
 # Place XeniaOS logo at plymouth folder location to appear on boot
 RUN mkdir -p /usr/share/plymouth/themes/spinner/
 
-RUN curl -O https://github.com/XeniaMeraki/XeniaOS-G-Euphoria/blob/main/xeniaos_text_logo_whitever_delphic_melody.svg > /usr/share/plymouth/themes/spinner/watermark.png
+RUN curl -O https://raw.githubusercontent.com/XeniaMeraki/XeniaOS-G-Euphoria/refs/heads/main/xeniaos_text_logo_whitever_delphic_melody.png > /usr/share/plymouth/themes/spinner/watermark.png
 
 RUN mkdir -p /usr/share/xeniaos/ && \
       git clone https://github.com/XeniaMeraki/XeniaOS-G-Euphoria /usr/share/xeniaos/wallpapers
@@ -199,7 +211,7 @@ PartOf=graphical-session.target \n\
 After=graphical-session.target \n\
  \n\
 [Service] \n\
-ExecStart=xwayland-sattelite \n\
+ExecStart=xwayland-satellite \n\
 Restart=on-failure \n\
 RestartSec=1 \n\
 \n\
@@ -319,3 +331,4 @@ RUN pacman -S whois --noconfirm
 RUN usermod -p "$(echo "changeme" | mkpasswd -s)" root
 
 RUN bootc container lint
+
