@@ -167,7 +167,7 @@ RUN pacman -Sy --noconfirm
 RUN pacman -S \
       chaotic-aur/niri-git chaotic-aur/input-remapper-git chaotic-aur/vesktop chaotic-aur/sc-controller chaotic-aur/flatpak-git \
       chaotic-aur/dms-shell-git chaotic-aur/ttf-twemoji chaotic-aur/ttf-symbola chaotic-aur/opentabletdriver chaotic-aur/yay \
-      chaotic0-aur/cosmic-session-git
+      chaotic-aur/cosmic-session-git
       --noconfirm
 
 RUN systemctl enable greetd
