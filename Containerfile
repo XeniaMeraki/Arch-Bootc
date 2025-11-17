@@ -26,7 +26,7 @@
 #                    1   ][[
 #                       `            Credit art: Cathodegaytube for original art, @catumin for ascii-ification
 
-FROM docker.io/cachyos/cachyos-v3:latest
+FROM docker.io/cachyos/cachyos:latest
 
 ENV DEV_DEPS="base-devel git rust"
 
