@@ -351,20 +351,6 @@ RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator /tm
       cd /tmp/media-automount-generator && \
       DESTDIR=/usr/local ./install.sh
 
-# Clip history / Cliphist systemd service / Clipboard history for copy and pasting to work properly in Niri~
-RUN echo -ne '[Unit]\n\
-Description=Clipboard History service\n\
-PartOf=graphical-session.target\n\
-After=graphical-session.target\n\
-\n\
-[Service]\n\
-ExecStart=wl-paste --watch cliphist store\n\
-Restart=on-failure\n\
-RestartSec=1\n\
-\n\
-[Install]\n\
-WantedBy=graphical-session.target' > /usr/lib/systemd/user/cliphist.service
-
 # Symlink Vi to Vim / Make it to where a user can use vi in terminal command to use vim automatically | Thanks Tulip
 RUN ln -s ./vim /usr/bin/vi
 
@@ -401,41 +387,25 @@ RUN mkdir -p /usr/share/xeniaos/ && \
 #Starship setup
 RUN echo 'eval "$(starship init bash)"' >> /etc/bash.bashrc
 
-# XWayland Satellite Systemd Service
-RUN echo -ne '[Unit] \n\
-Description=Xwayland satellite \n\
-PartOf=graphical-session.target \n\
-After=graphical-session.target \n\
- \n\
-[Service] \n\
-ExecStart=xwayland-satellite \n\
-Restart=on-failure \n\
-RestartSec=1 \n\
-\n\
-[Install] \n\
-WantedBy=graphical-session.target\n' > /usr/lib/systemd/user/xwayland-satellite.service
-
-# DMS Service Systemd Service
+# Cosmic Service Systemd Service
 RUN echo -ne '[Unit]\n\
 Description=Shell Service\n\
 PartOf=graphical-session.target\n\
 After=graphical-session.target\n\
 \n\
 [Service]\n\
-ExecStart=dms run\n\
+ExecStart=spawn-at-startup "cosmic-ext-alternative-startup"\n\
 Restart=on-failure\n\
 RestartSec=1\n\
 \n\
 [Install]\n\
-WantedBy=graphical-session.target\n' > /usr/lib/systemd/user/dms.service
+WantedBy=graphical-session.target\n' > /usr/lib/systemd/user/cosmic.service
 
 # Starts with Niri Session - Services for User Interaction
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=plasma-polkit-agent.service/" "/usr/lib/systemd/user/niri.service"
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=udiskie.service/" "/usr/lib/systemd/user/niri.service"
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=plasma-xdg-desktop-portal-kde.service/" "/usr/lib/systemd/user/niri.service"
-RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=xwayland-satellite.service/" "/usr/lib/systemd/user/niri.service"
-RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=dms.service/" "/usr/lib/systemd/user/niri.service"
-RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=cliphist.service/" "/usr/lib/systemd/user/niri.service"
+RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=cosmic.service/" "/usr/lib/systemd/user/niri.service"
 
 RUN echo -ne '[Unit]\n\
 Description=Initializes Chezmoi if directory is missing\n\
