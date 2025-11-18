@@ -407,6 +407,8 @@ RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=udiskie.service/" "/usr/lib/systemd/user/
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=plasma-xdg-desktop-portal-kde.service/" "/usr/lib/systemd/user/niri.service"
 RUN sed -i "s/\[Unit\]/\[Unit\]\nWants=cosmic.service/" "/usr/lib/systemd/user/niri.service"
 
+RUN systemctl enable --global cosmic.service
+
 RUN echo -ne '[Unit]\n\
 Description=Initializes Chezmoi if directory is missing\n\
 ConditionPathExists=!%h/.config/xeniaos/chezmoi\n\
@@ -450,12 +452,10 @@ RUN echo -ne '[terminal]\n\
 vt = 1\n\
 \n\
 [default_session]\n\
-command = "tuigreet --time --user-menu --remember --remember-session --asterisks --power-no-setsid --width 140 --theme border=orange;text=orange;prompt=orange;time=orange;action=orange;button=orange;container=gray;input=orange --cmd niri-session"\n\
+command = "tuigreet --time --user-menu --remember --remember-session --asterisks --power-no-setsid --width 140 --theme border=orange;text=orange;prompt=orange;time=orange;action=orange;button=orange;container=gray;input=orange --cmd start-cosmic-ext-niri"\n\
 user = "greetd"' > /etc/greetd/config.toml
 
 RUN systemctl enable --global chezmoi-init.service chezmoi-update.timer
-
-RUN systemctl enable --global dms.service
 
 ########################################################################################################################################
 # Section 8 - Final Bootc Setup. The horrors are endless. but we stay silly :3c -junoinfernal -maia arson crimew #######################
