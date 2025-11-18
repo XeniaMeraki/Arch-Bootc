@@ -189,7 +189,7 @@ RUN --mount=type=tmpfs,dst=/tmp \
 
 # These are example AUR packages, replace as you like. Multi-line or all one line both work for package install.
 RUN paru -S --noconfirm \
-        aur/cosmic-ext-extra-sessions
+        aur/cosmic-ext-extra-sessions-niri-git
 
 USER root
 WORKDIR /
