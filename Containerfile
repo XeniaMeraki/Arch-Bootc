@@ -475,9 +475,6 @@ OnUnitInactiveSec=1d\n\
 [Install]\n\
 WantedBy=timers.target\n' >> /usr/lib/systemd/user/chezmoi-update.timer
 
-# Create greeter user (required)
-RUN useradd -m -G video,input -s /usr/bin/nologin greeter
-
 # Regreeter login shell setup
 RUN mkdir -p /etc/greetd/
 
