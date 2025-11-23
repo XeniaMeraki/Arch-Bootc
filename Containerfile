@@ -317,41 +317,6 @@ RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator ./m
 # Section 6 - Systemd n Services | Hope is just like every other kind of work you do on your body, it's cyclical, and needs to be refreshed every day -Harpy #################
 ##############################################################################################################################################################################
 
-RUN echo -e '[Unit]\n\
-Description=Niri Wayland compositor\n\
-Documentation=https://github.com/YaLTeR/niri\n\
-Wants=graphical-session-pre.target\n\
-After=graphical-session-pre.target\n\
-\n\
-[Service]\n\
-Type=exec\n\
-ExecStart=/usr/bin/niri\n\
-Restart=on-failure\n\
-RestartSec=1\n\
-Slice=session.slice\n\
-\n\
-[Install]\n\
-WantedBy=niri-session.target' > /usr/lib/systemd/user/niri.service
-
-RUN echo -e '[Unit]\n\
-Description=Niri graphical session environment\n\
-Wants=graphical-session.target\n\
-After=graphical-session.target' > /usr/lib/systemd/user/niri-session.target
-
-# DMS Service Systemd Service
-RUN echo -e '[Unit]\n\
-Description=Shell Service\n\
-After=niri.service\n\
-PartOf=niri-session.target\n\
-\n\
-[Service]\n\
-ExecStart=dms run\n\
-Restart=on-failure\n\
-RestartSec=1\n\
-\n\
-[Install]\n\
-WantedBy=niri-session.target' > /usr/lib/systemd/user/dms.service
-
 # Systemd flatpak preinstall service, thanks Aurora
 RUN echo -e '[Unit]\n\
 Description=Preinstall Flatpaks\n\
@@ -373,33 +338,28 @@ StartLimitBurst=3\n\
 [Install]\n\
 WantedBy=multi-user.target' > /usr/lib/systemd/system/flatpak-preinstall.service
 
-# Automounter Systemd Service for flash drives and CDs
-RUN echo -e '[Unit] \n\
-Description=Udiskie automount\n\
-After=niri.service\n\
-PartOf=niri-session.target\n\
- \n\
-[Service]\n\
-ExecStart=udiskie --tray --smart-tray\n\
-Restart=on-failure\n\
-RestartSec=1\n\
-\n\
-[Install]\n\
-WantedBy=niri-session.target' > /usr/lib/systemd/user/udiskie.service
-
-# Clipboard History Systemd Service for copy and pasting to work properly in Niri~
+# DMS Service Systemd Service
 RUN echo -e '[Unit]\n\
-Description=Clipboard History service\n\
-After=niri.service\n\
-PartOf=niri-session.target\n\
+Description=Shell Service\n\
+PartOf=graphical-session.target\n\
+After=graphical-session.target\n\
 \n\
 [Service]\n\
-ExecStart=wl-paste --watch cliphist store\n\
+ExecStart=dms run\n\
 Restart=on-failure\n\
 RestartSec=1\n\
 \n\
 [Install]\n\
-WantedBy=niri-session.target' > /usr/lib/systemd/user/cliphist.service
+WantedBy=graphical-session.target' > /usr/lib/systemd/user/dms.service
+
+RUN echo -e '[Unit]/n/
+Description=udiskie automounter/n/
+/n/
+[Service]/n/
+ExecStart=/usr/bin/udiskie/n/
+/n/
+[Install]/n/
+WantedBy=default.target' > /usr/lib/systemd/user/udiskie.service
 
 RUN echo -e '[Unit]\n\
 Description=Initializes Chezmoi if directory is missing\n\
@@ -449,11 +409,10 @@ RUN systemctl enable systemd-sysusers.service \
 # User services (Niri/user session level)
 RUN systemctl --global enable \
       niri.service \
-      niri-session.target \
+      dms.service \
       udiskie.service \
       chezmoi-init.service \
       chezmoi-update.timer \
-      dms.service \
       cliphist.service
 
 # Groups fix | Truncated down by Hecknt | FIXME: Test on rebasing to/from Bazzite (Pay attention to community on Rechunker fixes)
