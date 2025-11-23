@@ -497,11 +497,11 @@ org.freedesktop.impl.portal.Notification=kde;gtk;gnome' > /usr/share/xdg-desktop
 # Use Chezmoi to set up config files, visual assets, avatars, and wallpapers
 RUN rm -rf /usr/share/xeniaos/zdots/ && \
       mkdir -p /usr/share/xeniaos/zdots/ \
-      git clone --depth=1 https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots/
+      git clone https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots/
 
 RUN rm -rf /usr/share/xeniaos/wallpapers/ && \
       mkdir -p /usr/share/xeniaos/wallpapers/ \
-      git clone --depth=1 https://github.com/XeniaMeraki/XeniaOS-G-Euphoria /usr/share/xeniaos/wallpapers
+      git clone https://github.com/XeniaMeraki/XeniaOS-G-Euphoria /usr/share/xeniaos/wallpapers
 
 #Starship setup
 RUN echo -e 'eval "$(starship init bash)"' >> /etc/bash.bashrc
