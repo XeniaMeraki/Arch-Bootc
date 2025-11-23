@@ -352,13 +352,13 @@ RestartSec=1\n\
 [Install]\n\
 WantedBy=graphical-session.target' > /usr/lib/systemd/user/dms.service
 
-RUN echo -e '[Unit]/n/
-Description=udiskie automounter/n/
-/n/
-[Service]/n/
-ExecStart=/usr/bin/udiskie/n/
-/n/
-[Install]/n/
+RUN echo -e '[Unit]\n\
+Description=udiskie automounter\n\
+\n\
+[Service]\n\
+ExecStart=/usr/bin/udiskie\n\
+\n\
+[Install]\n\
 WantedBy=default.target' > /usr/lib/systemd/user/udiskie.service
 
 RUN echo -e '[Unit]\n\
