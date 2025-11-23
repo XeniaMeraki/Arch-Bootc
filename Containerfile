@@ -66,7 +66,8 @@ RUN pacman -S --noconfirm noto-fonts noto-fonts-cjk noto-fonts-emoji unicode-emo
 
 # CLI Utilities
 RUN pacman -S --noconfirm sudo bash bash-completion fastfetch btop jq less lsof nano openssh powertop man-db wget yt-dlp \
-      tree usbutils vim wl-clipboard unzip ptyxis glibc-locales tar udev starship tuned-ppd tuned hyfetch curl
+      tree usbutils vim wl-clipboard unzip ptyxis glibc-locales tar udev starship tuned-ppd tuned hyfetch curl base-devel \
+      procps-ng file git
 
 # Virtualization \ Containerization
 RUN pacman -S --noconfirm distrobox docker podman
@@ -313,6 +314,13 @@ RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator ./m
     cd ./media-automount-generator && \
     ./install_udev.sh
 
+# Necessary for brew install
+RUN /bin/bash -c NONINTERACTIVE=1 "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+RUN test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)" \
+test -d /home/linuxbrew/.linuxbrew && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" \
+echo "eval \"\$($(brew --prefix)/bin/brew shellenv)\"" >> ~/.bashrc
+
 ##############################################################################################################################################################################
 # Section 6 - Systemd n Services | Hope is just like every other kind of work you do on your body, it's cyclical, and needs to be refreshed every day -Harpy #################
 ##############################################################################################################################################################################
@@ -412,8 +420,7 @@ RUN systemctl --global enable \
       dms.service \
       udiskie.service \
       chezmoi-init.service \
-      chezmoi-update.timer \
-      cliphist.service
+      chezmoi-update.timer
 
 # Groups fix | Truncated down by Hecknt | FIXME: Test on rebasing to/from Bazzite (Pay attention to community on Rechunker fixes)
 RUN echo -e "[Install]\nWantedBy=sysinit.target" | tee -a /usr/lib/systemd/system/systemd-sysusers.service && \
