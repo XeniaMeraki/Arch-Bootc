@@ -1,1 +1,1 @@
-Heavily a work in progress, please do not use until ready.
+Testing ground for [XeniaOS](https://github.com/XeniaMeraki/XeniaOS), do not use directly/on a main machine at great peril, I will add things and test things that may completely break the system at my leisure.
