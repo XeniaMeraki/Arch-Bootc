@@ -29,15 +29,15 @@
 #########################################
 # Stage 1 - Mixing up a cauldron of brew!
 #########################################
-FROM archlinux:latest AS foxywitch
+FROM docker.io/archlinux/archlinux:latest AS foxywitch
 RUN pacman -Syu --noconfirm git curl procps-ng gcc glibc patchelf
 
 # Create dedicated brew user + group
 RUN groupadd -r linuxbrew; \
     useradd -m -g linuxbrew linuxbrew
 
-USER foxycauldron
-WORKDIR /home/foxycauldron
+USER linuxbrew
+WORKDIR /home/linuxbrew
 
 # Throw mushrooms into the brew!!
 RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
@@ -46,7 +46,7 @@ RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEA
 #######################################################
 # Stage 2 - Clone the troopers- I mean clone the repos~
 #######################################################
-FROM archlinux:latest AS estrogen
+FROM docker.io/archlinux/archlinux:latest AS estrogen
 
 RUN pacman -Syu --noconfirm git
 
@@ -65,7 +65,7 @@ ENV DRACUT_NO_XATTR=1
 
 # Create linuxbrew runtime user
 RUN groupadd -r linuxbrew && \
-    useradd -m -g linuxbrew foxycauldron
+    useradd -m -g linuxbrew linuxbrew
 
 # Copy brew installation
 COPY --from=foxywitch /home/linuxbrew/.linuxbrew /home/linuxbrew/.linuxbrew
