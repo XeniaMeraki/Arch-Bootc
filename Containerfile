@@ -83,7 +83,7 @@ COPY --from=estrogen /estrogen/XeniaOS-G-Euphoria \
      /usr/share/xeniaos/wallpapers
 
 COPY --from=estrogen /estrogen/media-automount-generator \
-     /usr/share/xeniaos/media-automount-generator
+     ./media-automount-generator
 
 # We can now do a mostly normal containerfile build, previous steps were builders and image shrinkers
 
