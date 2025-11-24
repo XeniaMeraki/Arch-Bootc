@@ -104,6 +104,19 @@ COPY --from=estrogen /estrogen/media-automount-generator \
 # Section 1 - Package Installs | We grab every package we can from official arch repo/set up all non-flatpak apps for user ^^ ##########
 ########################################################################################################################################
 
+# Set it up such that pacman is always cleaned after installs
+RUN echo -e "[Trigger]\n\
+Operation = Install\n\
+Operation = Upgrade\n\
+Type = Package\n\
+Target = *\n\
+\n\
+[Action]\n\
+Description = Cleaning up package cache...\n\
+Depends = coreutils\n\
+When = PostTransaction\n\
+Exec = /usr/bin/rm -rf /var/cache/pacman/pkg" | tee /usr/share/libalpm/hooks/package-cleanup.hook
+
 # Initialize the database
 RUN pacman -Syu --noconfirm
 
@@ -151,11 +164,7 @@ RUN pacman -S --noconfirm greetd xwayland-satellite greetd-regreet xdg-desktop-p
       breeze brightnessctl wlsunset ddcutil xdg-utils kservice5 archlinux-xdg-menu shared-mime-info kio glycin
 
 # User frontend programs/apps
-RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-utility mangohud
-
-RUN rm -rf \
-        /tmp/* \
-        /var/cache/pacman/pkg/*
+RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-utility mangohud lib32-mangohud
 
 #######################################################################################################################################################
 # Section 2 - Package List | For my info and yours too! No secrets here. | Enjoy your life, and love everyone around you as much as possible ########
@@ -195,10 +204,6 @@ RUN pacman -S \
       chaotic-aur/dms-shell-git chaotic-aur/ttf-twemoji chaotic-aur/ttf-symbola chaotic-aur/opentabletdriver chaotic-aur/qt6ct-kde \
       chaotic-aur/colloid-catppuccin-gtk-theme-git chaotic-aur/colloid-catppuccin-theme-git chaotic-aur/paru \
       --noconfirm
-
-RUN rm -rf \
-        /tmp/* \
-        /var/cache/pacman/pkg/*
 
 ########################################################################################################################################
 # Section 4 - Flatpaks preinstalls | Don't forget. Always, somewhere, someone is fighting for you. You are not alone. ##################
@@ -288,8 +293,8 @@ RUN mkdir -p /etc/plymouth && \
       wget --tries=5 -O /usr/share/plymouth/themes/spinner/watermark.png \
       https://raw.githubusercontent.com/XeniaMeraki/XeniaOS-G-Euphoria/refs/heads/main/xeniaos_textlogo_plymouth_delphic_melody.png
 
-# Add all users to sudoers file for sudo ability
-RUN echo -e "%wheel      ALL=(ALL:ALL) ALL" | tee -a /etc/sudoers
+RUN echo "%wheel ALL=(ALL:ALL) ALL" >> /etc/sudoers && \
+echo "Defaults env_reset,pwfeedback" >> /etc/sudoers
 
 # Set up zram, this will help users not run out of memory. Fox will fix!
 RUN echo -e '[zram0]\nzram-size = min(ram, 8192)' >> /usr/lib/systemd/zram-generator.conf
@@ -355,20 +360,6 @@ ENV OBS_VKCAPTURE=1
 # Set vm.max_map_count for stability/improved gaming performance
 # https://wiki.archlinux.org/title/Gaming#Increase_vm.max_map_count
 RUN echo -e "vm.max_map_count = 2147483642" > /etc/sysctl.d/80-gamecompatibility.conf
-
-# Autoclean pacman package cache after each update, install, and uninstall
-RUN mkdir -p /etc/pacman.d/hooks/
-
-RUN echo -e '[Trigger]\n\
-Operation = Upgrade\n\
-Operation = Install\n\
-Operation = Remove\n\
-Type = Package\n\
-Target = *\n\
-[Action]\n\
-Description = Cleaning pacman cache...\n\
-When = PostTransaction\n\
-Exec = /usr/bin/paccache -r' > /etc/pacman.d/hooks/clean_package_cache.hook
 
 # Automount ext4/btrfs drives, feel free to mount your own in fstab if you understand how to do so
 # To turn off, run sudo ln -s /dev/null /etc/media-automount.d/_all.conf
@@ -456,10 +447,6 @@ ExecStart=mkdir -p %h/.config/xeniaos/chezmoi\n\
 ExecStart=touch %h/.config/xeniaos/chezmoi/chezmoi.toml\n\
 ExecStart=sh -c 'yes s | chezmoi apply --no-tty --keep-going -S /usr/share/xeniaos/zdots --verbose --config %h/.config/xeniaos/chezmoi/chezmoi.toml'\n\
 Type=oneshot" >> /usr/lib/systemd/user/chezmoi-update.service
-
-# Groups fix | Truncated down by Hecknt | FIXME: Test on rebasing to/from Bazzite (Pay attention to community on Rechunker fixes)
-RUN echo -e "[Install]\nWantedBy=sysinit.target" | tee -a /usr/lib/systemd/system/systemd-sysusers.service && \
-      systemctl enable systemd-sysusers.service && systemctl enable systemd-resolved.service
 
 # System services (Machine Boot level)
 RUN systemctl enable polkit.service \
@@ -567,23 +554,43 @@ label_width = 150' > /etc/greetd/regreet.toml
 # Section 9 - Final Bootc Setup | The horrors are endless. but we stay silly :3c -junoinfernal -maia arson crimew ######################
 ########################################################################################################################################
 
-# Add 3rd party bootc package repo via Hecknt FIXME Eventually remove this with Arch/Chaotic AUR proper host | https://github.com/hecknt/arch-bootc-pkgs
-RUN pacman-key --recv-key 5DE6BF3EBC86402E7A5C5D241FA48C960F9604CB --keyserver keyserver.ubuntu.com
-RUN pacman-key --lsign-key 5DE6BF3EBC86402E7A5C5D241FA48C960F9604CB
-RUN echo -e '[bootc]\nSigLevel = Required\nServer=https://github.com/hecknt/arch-bootc-pkgs/releases/download/$repo' >> /etc/pacman.conf
+# https://github.com/bootc-dev/bootc/issues/1801
+RUN --mount=type=tmpfs,dst=/tmp --mount=type=tmpfs,dst=/root \
+    pacman -S --noconfirm make git rust && \
+    git clone "https://github.com/bootc-dev/bootc.git" /tmp/bootc && \
+    make -C /tmp/bootc bin install-all && \
+    printf "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/lib/systemd/system\n" | tee /usr/lib/dracut/dracut.conf.d/30-bootcrew-fix-bootc-module.conf && \
+    printf 'reproducible=yes\nhostonly=no\ncompress=zstd\nadd_dracutmodules+=" ostree bootc "' | tee "/usr/lib/dracut/dracut.conf.d/30-bootcrew-bootc-container-build.conf" && \
+    dracut --force "$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)/initramfs.img" && \
+    pacman -Rns --noconfirm make git rust && \
+    pacman -S --clean --noconfirm
 
-RUN pacman -Sy --noconfirm
-
-RUN pacman -S --noconfirm bootc/bootc bootc/bootupd bootc/bcvk
-
-RUN rm -rf \
+RUN rm -rf /home/build/.cache/* && \
+    rm -rf \
         /tmp/* \
         /var/cache/pacman/pkg/*
 
-RUN printf "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/lib/systemd/system\n" | tee /usr/lib/dracut/dracut.conf.d/30-bootcrew-fix-bootc-module.conf && \
-      printf 'hostonly=no\nadd_dracutmodules+=" ostree bootc "' | tee /usr/lib/dracut/dracut.conf.d/30-bootcrew-bootc-modules.conf && \
-      sh -c 'export KERNEL_VERSION="$(basename "$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)")" && \
-      dracut --force --no-hostonly --reproducible --zstd --verbose --kver "$KERNEL_VERSION"  "/usr/lib/modules/$KERNEL_VERSION/initramfs.img"'
+# This fixes a user/groups error with rebasing from other problematic images.
+# FIXME Do NOT remove until fixed upstream or fixed universally. Updating with new fix also fine. Script created by Tulip.
+
+RUN mkdir -p /usr/lib/systemd/system-preset /usr/lib/systemd/system
+
+RUN echo -e '#!/bin/sh\ncat /usr/lib/sysusers.d/*.conf | grep -e "^g" | grep -v -e "^#" | awk "NF" | awk '\''{print $2}'\'' | grep -v -e "wheel" -e "root" -e "sudo" | xargs -I{} sed -i "/{}/d" $1' > /usr/libexec/xeniaos-group-fix
+RUN chmod +x /usr/libexec/xeniaos-group-fix
+RUN echo -e '[Unit]\n\
+Description=Fix groups\n\
+Wants=local-fs.target\n\
+After=local-fs.target\n\
+[Service]\n\
+Type=oneshot\n\
+ExecStart=/usr/libexec/xeniaos-group-fix /etc/group\n\
+ExecStart=/usr/libexec/xeniaos-group-fix /etc/gshadow\n\
+ExecStart=systemd-sysusers\n\
+[Install]\n\
+WantedBy=default.target multi-user.target' > /usr/lib/systemd/system/xeniaos-group-fix.service
+
+RUN echo -e "enable xeniaos-group-fix.service" > /usr/lib/systemd/system-preset/01-xeniaos-group-fix.preset
+RUN systemctl enable xeniaos-group-fix.service
 
 # Necessary for general behavior expected by image-based systems
 RUN sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd" && \
