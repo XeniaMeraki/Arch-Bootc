@@ -26,11 +26,66 @@
 #                    1   ][[
 #                       `            Credit art: Cathodegaytube for original art, @catumin for ascii-ification
 
-FROM docker.io/cachyos/cachyos-v3:latest
+#########################################
+# Stage 1 - Mixing up a cauldron of brew!
+#########################################
+FROM archlinux:latest AS foxywitch
+RUN pacman -Syu --noconfirm git curl procps-ng gcc glibc patchelf
 
-ENV DEV_DEPS="base-devel git rust"
+# Create dedicated brew user + group
+RUN groupadd -r linuxbrew; \
+    useradd -m -g linuxbrew linuxbrew
+
+USER foxycauldron
+WORKDIR /home/foxycauldron
+
+# Throw mushrooms into the brew!!
+RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
+    echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
+
+#######################################################
+# Stage 2 - Clone the troopers- I mean clone the repos~
+#######################################################
+FROM archlinux:latest AS estrogen
+
+RUN pacman -Syu --noconfirm git
+
+WORKDIR /estrogen
+
+RUN git clone --depth=1 https://github.com/XeniaMeraki/XeniaOS-HRT
+RUN git clone --depth=1 https://github.com/XeniaMeraki/XeniaOS-G-Euphoria
+RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator
+
+###############################
+# Begin final CachyOS layer!!
+###############################
+FROM docker.io/cachyos/cachyos-v3:latest AS final
 
 ENV DRACUT_NO_XATTR=1
+
+# Create linuxbrew runtime user
+RUN groupadd -r linuxbrew && \
+    useradd -m -g linuxbrew foxycauldron
+
+# Copy brew installation
+COPY --from=foxywitch /home/linuxbrew/.linuxbrew /home/linuxbrew/.linuxbrew
+RUN chown -R linuxbrew:linuxbrew /home/linuxbrew/.linuxbrew
+
+# Make brew available system-wide
+RUN echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' \
+      > /etc/profile.d/linuxbrew.sh
+
+# Get all our assets from previous git clones
+COPY --from=estrogen /estrogen/XeniaOS-HRT \
+     /usr/share/xeniaos/zdots
+
+COPY --from=estrogen /estrogen/XeniaOS-G-Euphoria \
+     /usr/share/xeniaos/wallpapers
+
+COPY --from=estrogen /estrogen/media-automount-generator \
+     /usr/share/xeniaos/media-automount-generator
+
+# We can now do a mostly normal containerfile build, previous steps were builders and image shrinkers
 
 # ✩₊˚.⋆☾𓃦☽⋆⁺₊✧ Index
 # Section 1 - Package Installs
@@ -66,8 +121,7 @@ RUN pacman -S --noconfirm noto-fonts noto-fonts-cjk noto-fonts-emoji unicode-emo
 
 # CLI Utilities
 RUN pacman -S --noconfirm sudo bash bash-completion fastfetch btop jq less lsof nano openssh powertop man-db wget yt-dlp \
-      tree usbutils vim wl-clipboard unzip ptyxis glibc-locales tar udev starship tuned-ppd tuned hyfetch curl base-devel \
-      procps-ng file git
+      tree usbutils vim wl-clipboard unzip ptyxis glibc-locales tar udev starship tuned-ppd tuned hyfetch curl patchelf
 
 # Virtualization \ Containerization
 RUN pacman -S --noconfirm distrobox docker podman
@@ -97,7 +151,9 @@ RUN pacman -S --noconfirm greetd xwayland-satellite greetd-regreet xdg-desktop-p
 # User frontend programs/apps
 RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-utility mangohud
 
-RUN pacman -S --clean
+RUN rm -rf \
+        /tmp/* \
+        /var/cache/pacman/pkg/*
 
 #######################################################################################################################################################
 # Section 2 - Package List | For my info and yours too! No secrets here. | Enjoy your life, and love everyone around you as much as possible ########
@@ -137,6 +193,10 @@ RUN pacman -S \
       chaotic-aur/dms-shell-git chaotic-aur/ttf-twemoji chaotic-aur/ttf-symbola chaotic-aur/opentabletdriver chaotic-aur/qt6ct-kde \
       chaotic-aur/colloid-catppuccin-gtk-theme-git chaotic-aur/colloid-catppuccin-theme-git chaotic-aur/paru \
       --noconfirm
+
+RUN rm -rf \
+        /tmp/* \
+        /var/cache/pacman/pkg/*
 
 ########################################################################################################################################
 # Section 4 - Flatpaks preinstalls | Don't forget. Always, somewhere, someone is fighting for you. You are not alone. ##################
@@ -310,16 +370,9 @@ Exec = /usr/bin/paccache -r' > /etc/pacman.d/hooks/clean_package_cache.hook
 
 # Automount ext4/btrfs drives, feel free to mount your own in fstab if you understand how to do so
 # To turn off, run sudo ln -s /dev/null /etc/media-automount.d/_all.conf
-RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator ./media-automount-generator && \
+RUN ./media-automount-generator && \
     cd ./media-automount-generator && \
     ./install_udev.sh
-
-# Necessary for brew install
-RUN /bin/bash -c NONINTERACTIVE=1 "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-RUN test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)" \
-test -d /home/linuxbrew/.linuxbrew && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" \
-echo "eval \"\$($(brew --prefix)/bin/brew shellenv)\"" >> ~/.bashrc
 
 ##############################################################################################################################################################################
 # Section 6 - Systemd n Services | Hope is just like every other kind of work you do on your body, it's cyclical, and needs to be refreshed every day -Harpy #################
@@ -460,15 +513,6 @@ org.freedesktop.impl.portal.ScreenCast=gnome;kde;gtk; \n\
 org.freedesktop.impl.portal.Access=kde;gtk;gnome; \n\
 org.freedesktop.impl.portal.Notification=kde;gtk;gnome' > /usr/share/xdg-desktop-portal/niri-portals.conf
 
-# Use Chezmoi to set up config files, visual assets, avatars, and wallpapers
-RUN rm -rf /usr/share/xeniaos/zdots/ && \
-      mkdir -p /usr/share/xeniaos/zdots/ \
-      git clone https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots/
-
-RUN rm -rf /usr/share/xeniaos/wallpapers/ && \
-      mkdir -p /usr/share/xeniaos/wallpapers/ \
-      git clone https://github.com/XeniaMeraki/XeniaOS-G-Euphoria /usr/share/xeniaos/wallpapers
-
 #Starship setup
 RUN echo -e 'eval "$(starship init bash)"' >> /etc/bash.bashrc
 
@@ -533,6 +577,10 @@ RUN pacman -Sy --noconfirm
 
 RUN pacman -S --noconfirm bootc/bootc bootc/bootupd bootc/bcvk
 
+# Move everything from `/var` to `/usr/lib/sysimage` so behavior around pacman remains the same on `bootc usroverlay`'d systems
+RUN grep "= */var" /etc/pacman.conf | sed "/= *\/var/s/.*=// ; s/ //" | xargs -n1 sh -c 'mkdir -p "/usr/lib/sysimage/$(dirname $(echo $1 | sed "s@/var/@@"))" && mv -v "$1" "/usr/lib/sysimage/$(echo "$1" | sed "s@/var/@@")"' '' && \
+    sed -i -e "/= *\/var/ s/^#//" -e "s@= */var@= /usr/lib/sysimage@g" -e "/DownloadUser/d" /etc/pacman.conf
+
 RUN rm -rf \
         /tmp/* \
         /var/cache/pacman/pkg/*
@@ -544,16 +592,12 @@ RUN printf "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/
 
 # Necessary for general behavior expected by image-based systems
 RUN sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd" && \
-    rm -rf /boot /home /root /usr/local /srv && \
-    mkdir -p /var /sysroot /boot /usr/lib/ostree && \
-    ln -s var/opt /opt && \
-    ln -s var/roothome /root && \
-    ln -s var/home /home && \
-    ln -s sysroot/ostree /ostree && \
-    echo -e "$(for dir in opt usrlocal home srv mnt ; do echo -e "d /var/$dir 0755 root root -" ; done)" | tee -a /usr/lib/tmpfiles.d/bootc-base-dirs.conf && \
-    echo -e "d /var/roothome 0700 root root -" | tee -a /usr/lib/tmpfiles.d/bootc-base-dirs.conf && \
-    echo -e "d /run/media 0755 root root -" | tee -a /usr/lib/tmpfiles.d/bootc-base-dirs.conf && \
-    echo -e "[composefs]\nenabled = yes\n[sysroot]\nreadonly = true" | tee "/usr/lib/ostree/prepare-root.conf"
+    rm -rf /boot /home /root /usr/local /srv /var /usr/lib/sysimage/log /usr/lib/sysimage/cache/pacman/pkg && \
+    mkdir -p /sysroot /boot /usr/lib/ostree /var && \
+    ln -s sysroot/ostree /ostree && ln -s var/roothome /root && ln -s var/srv /srv && ln -s var/opt /opt && ln -s var/mnt /mnt && ln -s var/home /home && \
+    echo "$(for dir in opt home srv mnt usrlocal ; do echo "d /var/$dir 0755 root root -" ; done)" | tee -a "/usr/lib/tmpfiles.d/bootc-base-dirs.conf" && \
+    printf "d /var/roothome 0700 root root -\nd /run/media 0755 root root -" | tee -a "/usr/lib/tmpfiles.d/bootc-base-dirs.conf" && \
+    printf '[composefs]\nenabled = yes\n[sysroot]\nreadonly = true\n' | tee "/usr/lib/ostree/prepare-root.conf"
 
 RUN bootc container lint
 
