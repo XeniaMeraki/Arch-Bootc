@@ -26,39 +26,6 @@
 #                    1   ][[
 #                       `            Credit art: Cathodegaytube for original art, @catumin for ascii-ification
 
-#########################################
-# Stage 1 - Mixing up a cauldron of brew!
-#########################################
-FROM docker.io/archlinux/archlinux:latest AS foxywitch
-RUN pacman -Syu --noconfirm git curl procps-ng gcc glibc patchelf
-
-# Create dedicated brew user + group
-RUN groupadd -r linuxbrew; \
-    useradd -m -g linuxbrew linuxbrew
-
-USER linuxbrew
-WORKDIR /home/linuxbrew
-
-# Throw mushrooms into the brew!!
-RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
-    echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
-
-#######################################################
-# Stage 2 - Clone the troopers- I mean clone the repos~
-#######################################################
-FROM docker.io/archlinux/archlinux:latest AS estrogen
-
-RUN pacman -Syu --noconfirm git
-
-WORKDIR /estrogen
-
-RUN git clone --depth=1 https://github.com/XeniaMeraki/XeniaOS-HRT
-RUN git clone --depth=1 https://github.com/XeniaMeraki/XeniaOS-G-Euphoria
-RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator
-
-###############################
-# Begin final CachyOS layer!!
-###############################
 FROM docker.io/cachyos/cachyos-v3:latest AS final
 
 # Move everything from `/var` to `/usr/lib/sysimage` so behavior around pacman remains the same on `bootc usroverlay`'d systems
@@ -66,28 +33,6 @@ RUN grep "= */var" /etc/pacman.conf | sed "/= *\/var/s/.*=// ; s/ //" | xargs -n
     sed -i -e "/= *\/var/ s/^#//" -e "s@= */var@= /usr/lib/sysimage@g" -e "/DownloadUser/d" /etc/pacman.conf
 
 ENV DRACUT_NO_XATTR=1
-
-# Create linuxbrew runtime user
-RUN groupadd -r linuxbrew && \
-    useradd -m -g linuxbrew linuxbrew
-
-# Copy brew installation
-COPY --from=foxywitch /home/linuxbrew/.linuxbrew /home/linuxbrew/.linuxbrew
-RUN chown -R linuxbrew:linuxbrew /home/linuxbrew/.linuxbrew
-
-# Make brew available system-wide
-RUN echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' \
-      > /etc/profile.d/linuxbrew.sh
-
-# Get all our assets from previous git clones
-COPY --from=estrogen /estrogen/XeniaOS-HRT \
-     /usr/share/xeniaos/zdots
-
-COPY --from=estrogen /estrogen/XeniaOS-G-Euphoria \
-     /usr/share/xeniaos/wallpapers
-
-COPY --from=estrogen /estrogen/media-automount-generator \
-     ./media-automount-generator
 
 # ✩₊˚.⋆☾𓃦☽⋆⁺₊✧ Index
 # Section 1 - Package Installs
@@ -312,6 +257,8 @@ HOME_URL="https://github.com/XeniaMeraki/XeniaOS"\n\
 LOGO=archlinux-logo\n\
 DEFAULT_HOSTNAME="XeniaOS"' > /etc/os-release
 
+RUN wget -O /usr/share/homebrew.tar.zst "https://github.com/ublue-os/packages/releases/download/homebrew-2025-11-11-01-29-58/homebrew-$(arch).tar.zst"@
+
 # Symlink Vi to Vim / Make it to where a user can use vi in terminal command to use vim automatically | Thanks Tulip
 RUN ln -s ./vim /usr/bin/vi
 
@@ -320,6 +267,13 @@ RUN mkdir -p /usr/share/gtk-4.0
 
 RUN ln -sf /usr/share/themes/Colloid-Orange-Dark-Catppuccin/gtk-4.0/{assets,gtk.css,gtk-dark.css} \
        /usr/share/gtk-4.0/
+
+# Use Chezmoi to set up config files, visual assets, avatars, and wallpapers
+RUN rm -rf /usr/share/xeniaos/zdots/ && \
+      git clone --depth=1 https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots/
+
+RUN rm -rf /usr/share/xeniaos/wallpapers/ && \
+      git clone --depth=1 https://github.com/XeniaMeraki/XeniaOS-G-Euphoria /usr/share/xeniaos/wallpapers
 
 # System-wide default application associations for filetype calls
 RUN mkdir -p /etc/xdg/
@@ -363,8 +317,16 @@ RUN echo -e "vm.max_map_count = 2147483642" > /etc/sysctl.d/80-gamecompatibility
 
 # Automount ext4/btrfs drives, feel free to mount your own in fstab if you understand how to do so
 # To turn off, run sudo ln -s /dev/null /etc/media-automount.d/_all.conf
-RUN cd ./media-automount-generator && \
-    ./install_udev.sh
+RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator /tmp/media-automount-generator && \
+    cd /tmp/media-automount-generator && \
+    ./install_udev.sh && \
+    rm -rf /tmp/media-automount-generator
+
+########################################################################################################################################
+# Brew section wip~
+########################################################################################################################################
+
+RUN echo -e '#!/usr/bin/env bash\n[[ -d /home/linuxbrew/.linuxbrew && $- == *i* ]] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' > /etc/profile.d/brew.sh
 
 ##############################################################################################################################################################################
 # Section 6 - Systemd n Services | Hope is just like every other kind of work you do on your body, it's cyclical, and needs to be refreshed every day -Harpy #################
@@ -448,14 +410,36 @@ ExecStart=touch %h/.config/xeniaos/chezmoi/chezmoi.toml\n\
 ExecStart=sh -c 'yes s | chezmoi apply --no-tty --keep-going -S /usr/share/xeniaos/zdots --verbose --config %h/.config/xeniaos/chezmoi/chezmoi.toml'\n\
 Type=oneshot" >> /usr/lib/systemd/user/chezmoi-update.service
 
+RUN echo -e '[Unit]\n\
+Description=Setup Brew\n\
+Wants=basic.target\n\
+After=basic.target\n\
+ConditionPathExists=!/etc/.linuxbrew\n\
+ConditionPathExists=!/var/home/linuxbrew/.linuxbrew\n\
+ConditionPathExists=/usr/share/homebrew.tar.zst\n\
+\n\
+[Service]\n\
+Type=oneshot\n\
+ExecStart=/usr/bin/mkdir -p /tmp/homebrew\n\
+ExecStart=/usr/bin/mkdir -p /var/home/linuxbrew\n\
+ExecStart=/usr/bin/tar --zstd -xvf /usr/share/homebrew.tar.zst -C /tmp/homebrew\n\
+ExecStart=/usr/bin/cp -R -n /tmp/homebrew/home/linuxbrew/.linuxbrew /var/home/linuxbrew\n\
+ExecStart=/usr/bin/chown -R 1000:1000 /var/home/linuxbrew\n\
+ExecStart=/usr/bin/rm -rf /tmp/homebrew\n\
+ExecStart=/usr/bin/touch /etc/.linuxbrew\n\
+\n\
+[Install]\n\
+WantedBy=default.target multi-user.target' > /usr/lib/systemd/system/brew-setup.service
+
 # System services (Machine Boot level)
 RUN systemctl enable polkit.service \
-      NetworkManager.service \
-      tuned.service \
-      tuned-ppd.service \
-      firewalld.service \
-      greetd.service \
-      flatpak-preinstall.service
+    NetworkManager.service \
+    tuned.service \
+    tuned-ppd.service \
+    firewalld.service \
+    greetd.service \
+    flatpak-preinstall.service \
+    brew-setup.service
 
 # User services (Niri/user session level)
 RUN systemctl --global enable \
