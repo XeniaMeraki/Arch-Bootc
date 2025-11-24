@@ -61,6 +61,10 @@ RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator
 ###############################
 FROM docker.io/cachyos/cachyos-v3:latest AS final
 
+# Move everything from `/var` to `/usr/lib/sysimage` so behavior around pacman remains the same on `bootc usroverlay`'d systems
+RUN grep "= */var" /etc/pacman.conf | sed "/= *\/var/s/.*=// ; s/ //" | xargs -n1 sh -c 'mkdir -p "/usr/lib/sysimage/$(dirname $(echo $1 | sed "s@/var/@@"))" && mv -v "$1" "/usr/lib/sysimage/$(echo "$1" | sed "s@/var/@@")"' '' && \
+    sed -i -e "/= *\/var/ s/^#//" -e "s@= */var@= /usr/lib/sysimage@g" -e "/DownloadUser/d" /etc/pacman.conf
+
 ENV DRACUT_NO_XATTR=1
 
 # Create linuxbrew runtime user
@@ -84,8 +88,6 @@ COPY --from=estrogen /estrogen/XeniaOS-G-Euphoria \
 
 COPY --from=estrogen /estrogen/media-automount-generator \
      ./media-automount-generator
-
-# We can now do a mostly normal containerfile build, previous steps were builders and image shrinkers
 
 # ✩₊˚.⋆☾𓃦☽⋆⁺₊✧ Index
 # Section 1 - Package Installs
@@ -455,10 +457,12 @@ ExecStart=touch %h/.config/xeniaos/chezmoi/chezmoi.toml\n\
 ExecStart=sh -c 'yes s | chezmoi apply --no-tty --keep-going -S /usr/share/xeniaos/zdots --verbose --config %h/.config/xeniaos/chezmoi/chezmoi.toml'\n\
 Type=oneshot" >> /usr/lib/systemd/user/chezmoi-update.service
 
+# Groups fix | Truncated down by Hecknt | FIXME: Test on rebasing to/from Bazzite (Pay attention to community on Rechunker fixes)
+RUN echo -e "[Install]\nWantedBy=sysinit.target" | tee -a /usr/lib/systemd/system/systemd-sysusers.service && \
+      systemctl enable systemd-sysusers.service && systemctl enable systemd-resolved.service
+
 # System services (Machine Boot level)
-RUN systemctl enable systemd-sysusers.service \
-      systemd-resolved.service \
-      polkit.service \
+RUN systemctl enable polkit.service \
       NetworkManager.service \
       tuned.service \
       tuned-ppd.service \
@@ -473,10 +477,6 @@ RUN systemctl --global enable \
       udiskie.service \
       chezmoi-init.service \
       chezmoi-update.timer
-
-# Groups fix | Truncated down by Hecknt | FIXME: Test on rebasing to/from Bazzite (Pay attention to community on Rechunker fixes)
-RUN echo -e "[Install]\nWantedBy=sysinit.target" | tee -a /usr/lib/systemd/system/systemd-sysusers.service && \
-      systemctl enable systemd-sysusers.service
 
 ########################################################################################################################################
 # Section 7 - CachyOS settings | Since we have the CachyOS kernel, we gotta put it to good use ≽^•⩊•^≼ ################################
@@ -575,10 +575,6 @@ RUN echo -e '[bootc]\nSigLevel = Required\nServer=https://github.com/hecknt/arch
 RUN pacman -Sy --noconfirm
 
 RUN pacman -S --noconfirm bootc/bootc bootc/bootupd bootc/bcvk
-
-# Move everything from `/var` to `/usr/lib/sysimage` so behavior around pacman remains the same on `bootc usroverlay`'d systems
-RUN grep "= */var" /etc/pacman.conf | sed "/= *\/var/s/.*=// ; s/ //" | xargs -n1 sh -c 'mkdir -p "/usr/lib/sysimage/$(dirname $(echo $1 | sed "s@/var/@@"))" && mv -v "$1" "/usr/lib/sysimage/$(echo "$1" | sed "s@/var/@@")"' '' && \
-    sed -i -e "/= *\/var/ s/^#//" -e "s@= */var@= /usr/lib/sysimage@g" -e "/DownloadUser/d" /etc/pacman.conf
 
 RUN rm -rf \
         /tmp/* \
