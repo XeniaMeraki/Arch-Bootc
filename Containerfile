@@ -370,8 +370,7 @@ Exec = /usr/bin/paccache -r' > /etc/pacman.d/hooks/clean_package_cache.hook
 
 # Automount ext4/btrfs drives, feel free to mount your own in fstab if you understand how to do so
 # To turn off, run sudo ln -s /dev/null /etc/media-automount.d/_all.conf
-RUN ./media-automount-generator && \
-    cd ./media-automount-generator && \
+RUN cd ./media-automount-generator && \
     ./install_udev.sh
 
 ##############################################################################################################################################################################
