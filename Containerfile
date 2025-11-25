@@ -323,10 +323,35 @@ RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator /tm
     rm -rf /tmp/media-automount-generator
 
 ########################################################################################################################################
-# Brew section wip~
+# Set up brew | terminal packages manager utility | https://brew.sh/
 ########################################################################################################################################
 
-RUN echo -e '#!/usr/bin/env bash\n[[ -d /home/linuxbrew/.linuxbrew && $- == *i* ]] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' > /etc/profile.d/brew.sh
+RUN mkdir -p /var/home/linuxbrew
+
+RUN curl -s https://api.github.com/repos/ublue-os/packages/releases/latest \
+    | jq -r '.assets[] | select(.name | test("homebrew-x86_64.*tar.zst")) | .browser_download_url' \
+    | xargs wget -O /usr/share/homebrew.tar.zst
+
+RUN echo '[[ -d /home/linuxbrew/.linuxbrew && $- == *i* ]] && \
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' > /etc/profile.d/brew.sh
+
+RUN echo -e "[Unit]\n\
+Description=Setup Homebrew from tarball\n\
+After=local-fs.target\n\
+ConditionPathExists=!/var/home/linuxbrew/.linuxbrew\n\
+ConditionPathExists=/usr/share/homebrew.tar.zst\n\
+\n\
+[Service]\n\
+Type=oneshot\n\
+ExecStart=/usr/bin/mkdir -p /tmp/homebrew\n\
+ExecStart=/usr/bin/tar --zstd -xf /usr/share/homebrew.tar.zst -C /tmp/homebrew\n\
+ExecStart=/usr/bin/cp -R -n /tmp/homebrew/home/linuxbrew/.linuxbrew /var/home/linuxbrew\n\
+ExecStart=/usr/bin/rm -rf /tmp/homebrew\n\
+\n\
+[Install]\n\
+WantedBy=multi-user.target" > /usr/lib/systemd/system/brew-setup.service
+
+RUN systemctl enable brew-setup.service
 
 ##############################################################################################################################################################################
 # Section 6 - Systemd n Services | Hope is just like every other kind of work you do on your body, it's cyclical, and needs to be refreshed every day -Harpy #################
@@ -410,27 +435,6 @@ ExecStart=touch %h/.config/xeniaos/chezmoi/chezmoi.toml\n\
 ExecStart=sh -c 'yes s | chezmoi apply --no-tty --keep-going -S /usr/share/xeniaos/zdots --verbose --config %h/.config/xeniaos/chezmoi/chezmoi.toml'\n\
 Type=oneshot" >> /usr/lib/systemd/user/chezmoi-update.service
 
-RUN echo -e '[Unit]\n\
-Description=Setup Brew\n\
-Wants=basic.target\n\
-After=basic.target\n\
-ConditionPathExists=!/etc/.linuxbrew\n\
-ConditionPathExists=!/var/home/linuxbrew/.linuxbrew\n\
-ConditionPathExists=/usr/share/homebrew.tar.zst\n\
-\n\
-[Service]\n\
-Type=oneshot\n\
-ExecStart=/usr/bin/mkdir -p /tmp/homebrew\n\
-ExecStart=/usr/bin/mkdir -p /var/home/linuxbrew\n\
-ExecStart=/usr/bin/tar --zstd -xvf /usr/share/homebrew.tar.zst -C /tmp/homebrew\n\
-ExecStart=/usr/bin/cp -R -n /tmp/homebrew/home/linuxbrew/.linuxbrew /var/home/linuxbrew\n\
-ExecStart=/usr/bin/chown -R 1000:1000 /var/home/linuxbrew\n\
-ExecStart=/usr/bin/rm -rf /tmp/homebrew\n\
-ExecStart=/usr/bin/touch /etc/.linuxbrew\n\
-\n\
-[Install]\n\
-WantedBy=default.target multi-user.target' > /usr/lib/systemd/system/brew-setup.service
-
 # System services (Machine Boot level)
 RUN systemctl enable polkit.service \
     NetworkManager.service \
@@ -438,8 +442,7 @@ RUN systemctl enable polkit.service \
     tuned-ppd.service \
     firewalld.service \
     greetd.service \
-    flatpak-preinstall.service \
-    brew-setup.service
+    flatpak-preinstall.service
 
 # User services (Niri/user session level)
 RUN systemctl --global enable \
