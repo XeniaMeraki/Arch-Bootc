@@ -257,8 +257,6 @@ HOME_URL="https://github.com/XeniaMeraki/XeniaOS"\n\
 LOGO=archlinux-logo\n\
 DEFAULT_HOSTNAME="XeniaOS"' > /etc/os-release
 
-RUN wget -O /usr/share/homebrew.tar.zst "https://github.com/ublue-os/packages/releases/download/homebrew-2025-11-11-01-29-58/homebrew-$(arch).tar.zst"@
-
 # Symlink Vi to Vim / Make it to where a user can use vi in terminal command to use vim automatically | Thanks Tulip
 RUN ln -s ./vim /usr/bin/vi
 
@@ -326,8 +324,6 @@ RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator /tm
 # Set up brew | terminal packages manager utility | https://brew.sh/
 ########################################################################################################################################
 
-RUN mkdir -p /var/home/linuxbrew
-
 RUN curl -s https://api.github.com/repos/ublue-os/packages/releases/latest \
     | jq -r '.assets[] | select(.name | test("homebrew-x86_64.*tar.zst")) | .browser_download_url' \
     | xargs wget -O /usr/share/homebrew.tar.zst
@@ -345,6 +341,7 @@ ConditionPathExists=/usr/share/homebrew.tar.zst\n\
 Type=oneshot\n\
 ExecStart=/usr/bin/mkdir -p /tmp/homebrew\n\
 ExecStart=/usr/bin/tar --zstd -xf /usr/share/homebrew.tar.zst -C /tmp/homebrew\n\
+ExecStart=/usr/bin/mkdir -p /var/home/linuxbrew\n\
 ExecStart=/usr/bin/cp -R -n /tmp/homebrew/home/linuxbrew/.linuxbrew /var/home/linuxbrew\n\
 ExecStart=/usr/bin/rm -rf /tmp/homebrew\n\
 \n\
