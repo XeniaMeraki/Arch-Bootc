@@ -145,11 +145,10 @@ RUN echo -e '[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist' >> /etc/
 
 RUN pacman -Sy --noconfirm
 
-RUN pacman -S \
+RUN pacman -S --noconfirm \
       chaotic-aur/niri-git chaotic-aur/input-remapper-git chaotic-aur/vesktop-git chaotic-aur/sc-controller chaotic-aur/flatpak-git \
       chaotic-aur/dms-shell-git chaotic-aur/ttf-twemoji chaotic-aur/ttf-symbola chaotic-aur/opentabletdriver chaotic-aur/qt6ct-kde \
-      chaotic-aur/colloid-catppuccin-gtk-theme-git chaotic-aur/colloid-catppuccin-theme-git chaotic-aur/paru \
-      --noconfirm
+      chaotic-aur/colloid-catppuccin-gtk-theme-git chaotic-aur/colloid-catppuccin-theme-git
 
 # Regular AUR Build Section
 # Create build user
@@ -160,7 +159,12 @@ RUN useradd -m --shell=/bin/bash build && usermod -L build && \
 # Install AUR packages
 USER build
 WORKDIR /home/build
-RUN --mount=type=tmpfs,dst=/tmp 
+RUN --mount=type=tmpfs,dst=/tmp \
+    git clone https://aur.archlinux.org/paru-bin.git --single-branch /tmp/paru && \
+    cd /tmp/paru && \
+    makepkg -si --noconfirm && \
+    cd .. && \
+    rm -drf paru-bin
 
 # AUR packages
 RUN paru -S --noconfirm \
