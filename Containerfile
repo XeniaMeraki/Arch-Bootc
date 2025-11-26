@@ -37,13 +37,14 @@ ENV DRACUT_NO_XATTR=1
 # ✩₊˚.⋆☾𓃦☽⋆⁺₊✧ Index
 # Section 1 - Package Installs
 # Section 2 - Package List
-# Section 3 - Chaotic AUR
+# Section 3 - Chaotic AUR / AUR
 # Section 4 - Flatpaks preinstalls
 # Section 5 - Linux OS Stuffs
-# Section 6 - Systemd n Services
-# Section 7 - CachyOS Settings
-# Section 8 - Niri/Chezmoi/DMS
-# Section 9 - Final Bootc Setup
+# Section 6 - Set up Brew
+# Section 7 - Systemd n Services
+# Section 8 - CachyOS Settings
+# Section 9 - Niri/Chezmoi/DMS
+# Section 10 - Final Bootc Setup
 
 ########################################################################################################################################
 # Section 1 - Package Installs | We grab every package we can from official arch repo/set up all non-flatpak apps for user ^^ ##########
@@ -81,7 +82,7 @@ RUN pacman -S --noconfirm noto-fonts noto-fonts-cjk noto-fonts-emoji unicode-emo
 
 # CLI Utilities
 RUN pacman -S --noconfirm sudo bash bash-completion fastfetch btop jq less lsof nano openssh powertop man-db wget yt-dlp \
-      tree usbutils vim wl-clipboard unzip ptyxis glibc-locales tar udev starship tuned-ppd tuned hyfetch curl patchelf
+      tree usbutils vim wl-clipboard unzip ptyxis glibc-locales tar udev starship tuned-ppd tuned hyfetch curl patchelf base-devel
 
 # Virtualization \ Containerization
 RUN pacman -S --noconfirm distrobox docker podman
@@ -128,9 +129,9 @@ RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-util
 # Okular | Kate | Warehouse | Fedora Media Writer | Gear Lever | Haruna | Space Cadet Pinball | Gwenview
 # Audacity | Filelight | Not Tetris 2 | Floorp
 
-########################################################################################################################################
-# Section 3 - Chaotic AUR # We grab some precompiled packages from the Chaotic AUR for things not on Arch repos/better updated~ ovo ####
-########################################################################################################################################
+##############################################################################################################################################
+# Section 3 - Chaotic AUR / AUR # We grab some precompiled packages from the Chaotic AUR for things not on Arch repos/better updated~ ovo ####
+##############################################################################################################################################
 
 RUN pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
 
@@ -149,6 +150,35 @@ RUN pacman -S \
       chaotic-aur/dms-shell-git chaotic-aur/ttf-twemoji chaotic-aur/ttf-symbola chaotic-aur/opentabletdriver chaotic-aur/qt6ct-kde \
       chaotic-aur/colloid-catppuccin-gtk-theme-git chaotic-aur/colloid-catppuccin-theme-git chaotic-aur/paru \
       --noconfirm
+
+# Regular AUR Build Section
+# Create build user
+RUN useradd -m --shell=/bin/bash build && usermod -L build && \
+    echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Install AUR packages
+USER build
+WORKDIR /home/build
+RUN --mount=type=tmpfs,dst=/tmp 
+
+# AUR packages
+RUN paru -S --noconfirm \
+        aur/uupd
+
+USER root
+WORKDIR /
+# Cleanup and delete build user
+RUN userdel -r build && \
+    rm -drf /home/build && \
+    sed -i '/build ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
+    sed -i '/root ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
+    rm -rf /home/build && \
+    rm -rf \
+        /tmp/* \
+        /var/cache/pacman/pkg/*
+
+#AUR script credit @KyleGospo @cyrv6737
 
 ########################################################################################################################################
 # Section 4 - Flatpaks preinstalls | Don't forget. Always, somewhere, someone is fighting for you. You are not alone. ##################
@@ -260,6 +290,10 @@ DEFAULT_HOSTNAME="XeniaOS"' > /etc/os-release
 # Symlink Vi to Vim / Make it to where a user can use vi in terminal command to use vim automatically | Thanks Tulip
 RUN ln -s ./vim /usr/bin/vi
 
+# Redirect neofetch & fastfetch -> hyfetch
+RUN ln -sf /usr/bin/hyfetch /usr/local/bin/neofetch
+RUN ln -sf /usr/bin/hyfetch /usr/local/bin/fastfetch
+
 # Symlink GTK to Libadwaita
 RUN mkdir -p /usr/share/gtk-4.0
 
@@ -321,7 +355,7 @@ RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator /tm
     rm -rf /tmp/media-automount-generator
 
 ########################################################################################################################################
-# Set up brew | terminal packages manager utility | https://brew.sh/
+# Section 6 - Set up brew | terminal packages manager utility | https://brew.sh/ | Foxy witch will mix up a brew for you! ##############
 ########################################################################################################################################
 
 RUN curl -s https://api.github.com/repos/ublue-os/packages/releases/latest \
@@ -351,7 +385,7 @@ WantedBy=multi-user.target" > /usr/lib/systemd/system/brew-setup.service
 RUN systemctl enable brew-setup.service
 
 ##############################################################################################################################################################################
-# Section 6 - Systemd n Services | Hope is just like every other kind of work you do on your body, it's cyclical, and needs to be refreshed every day -Harpy #################
+# Section 7 - Systemd n Services | Hope is just like every other kind of work you do on your body, it's cyclical, and needs to be refreshed every day -Harpy #################
 ##############################################################################################################################################################################
 
 # Systemd flatpak preinstall service, thanks Aurora
@@ -450,7 +484,7 @@ RUN systemctl --global enable \
       chezmoi-update.timer
 
 ########################################################################################################################################
-# Section 7 - CachyOS settings | Since we have the CachyOS kernel, we gotta put it to good use ≽^•⩊•^≼ ################################
+# Section 8 - CachyOS settings | Since we have the CachyOS kernel, we gotta put it to good use ≽^•⩊•^≼ ################################
 ########################################################################################################################################
 
 # Activate NTSync, wags my tail in your general direction
@@ -461,7 +495,7 @@ RUN echo -e 'net.core.default_qdisc=fq \n\
 net.ipv4.tcp_congestion_control=bbr' > /etc/sysctl.d/99-bbr3.conf
 
 ########################################################################################################################################
-# Section 8 - Niri/Chezmoi/DMS | Everything to do with the desktop/visual look of your taskbar/ config files (⸝⸝>w<⸝⸝) #################
+# Section 9 - Niri/Chezmoi/DMS | Everything to do with the desktop/visual look of your taskbar/ config files (⸝⸝>w<⸝⸝) #################
 ########################################################################################################################################
 
 # Catppuccin style cursor, in a lovely orange, much like my furrrrr~
@@ -535,7 +569,7 @@ resolution = "500ms"\n\
 label_width = 150' > /etc/greetd/regreet.toml
 
 ########################################################################################################################################
-# Section 9 - Final Bootc Setup | The horrors are endless. but we stay silly :3c -junoinfernal -maia arson crimew ######################
+# Section 10 - Final Bootc Setup | The horrors are endless. but we stay silly :3c -junoinfernal -maia arson crimew ######################
 ########################################################################################################################################
 
 # https://github.com/bootc-dev/bootc/issues/1801
