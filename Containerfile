@@ -621,7 +621,7 @@ RUN rm -rf /home/build/.cache/* && \
     rm -rf \
         /tmp/* \
         /var/cache/pacman/pkg/* && \
-    pacman -Rns --noconfirm git base-devel make
+    pacman -Rns --noconfirm paru-bin git base-devel make
 
 # Necessary for general behavior expected by image-based systems
 RUN sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd" && \
