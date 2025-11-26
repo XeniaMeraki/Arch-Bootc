@@ -470,6 +470,27 @@ ExecStart=touch %h/.config/xeniaos/chezmoi/chezmoi.toml\n\
 ExecStart=sh -c 'yes s | chezmoi apply --no-tty --keep-going -S /usr/share/xeniaos/zdots --verbose --config %h/.config/xeniaos/chezmoi/chezmoi.toml'\n\
 Type=oneshot" >> /usr/lib/systemd/user/chezmoi-update.service
 
+# This fixes a user/groups error with rebasing from other problematic images.
+# FIXME Do NOT remove until fixed upstream or fixed universally. Updating with new fix also fine. Script created by Tulip.
+RUN mkdir -p /usr/lib/systemd/system-preset /usr/lib/systemd/system
+
+RUN echo -e '#!/bin/sh\ncat /usr/lib/sysusers.d/*.conf | grep -e "^g" | grep -v -e "^#" | awk "NF" | awk '\''{print $2}'\'' | grep -v -e "wheel" -e "root" -e "sudo" | xargs -I{} sed -i "/{}/d" $1' > /usr/libexec/xeniaos-group-fix
+RUN chmod +x /usr/libexec/xeniaos-group-fix
+RUN echo -e '[Unit]\n\
+Description=Fix groups\n\
+Wants=local-fs.target\n\
+After=local-fs.target\n\
+[Service]\n\
+Type=oneshot\n\
+ExecStart=/usr/libexec/xeniaos-group-fix /etc/group\n\
+ExecStart=/usr/libexec/xeniaos-group-fix /etc/gshadow\n\
+ExecStart=systemd-sysusers\n\
+[Install]\n\
+WantedBy=default.target multi-user.target' > /usr/lib/systemd/system/xeniaos-group-fix.service
+
+RUN echo -e "enable xeniaos-group-fix.service" > /usr/lib/systemd/system-preset/01-xeniaos-group-fix.preset
+RUN systemctl enable xeniaos-group-fix.service
+
 # System services (Machine Boot level)
 RUN systemctl enable polkit.service \
     NetworkManager.service \
@@ -576,50 +597,39 @@ label_width = 150' > /etc/greetd/regreet.toml
 # Section 10 - Final Bootc Setup | The horrors are endless. but we stay silly :3c -junoinfernal -maia arson crimew ######################
 ########################################################################################################################################
 
-# https://github.com/bootc-dev/bootc/issues/1801
-RUN --mount=type=tmpfs,dst=/tmp --mount=type=tmpfs,dst=/root \
-    pacman -S --noconfirm make git rust && \
-    git clone "https://github.com/bootc-dev/bootc.git" /tmp/bootc && \
-    make -C /tmp/bootc bin install-all && \
-    printf "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/lib/systemd/system\n" | tee /usr/lib/dracut/dracut.conf.d/30-bootcrew-fix-bootc-module.conf && \
-    printf 'reproducible=yes\nhostonly=no\ncompress=zstd\nadd_dracutmodules+=" ostree bootc "' | tee "/usr/lib/dracut/dracut.conf.d/30-bootcrew-bootc-container-build.conf" && \
-    dracut --force "$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)/initramfs.img"
+# Add 3rd party bootc package repo via Hecknt FIXME Eventually remove this with Arch/Chaotic AUR proper host | https://github.com/hecknt/arch-bootc-pkgs
+RUN pacman-key --recv-key 5DE6BF3EBC86402E7A5C5D241FA48C960F9604CB --keyserver keyserver.ubuntu.com
+RUN pacman-key --lsign-key 5DE6BF3EBC86402E7A5C5D241FA48C960F9604CB
+RUN echo -e '[bootc]\nSigLevel = Required\nServer=https://github.com/hecknt/arch-bootc-pkgs/releases/download/$repo' >> /etc/pacman.conf
+
+RUN pacman -Sy --noconfirm
+
+RUN pacman -S --noconfirm bootc/bootc bootc/bootupd bootc/bcvk
+
+# FIXME https://github.com/bootc-dev/bootc/issues/1801
+RUN printf "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/lib/systemd/system\n" | tee /usr/lib/dracut/dracut.conf.d/30-bootcrew-fix-bootc-module.conf && \
+      printf 'hostonly=no\nadd_dracutmodules+=" ostree bootc "' | tee /usr/lib/dracut/dracut.conf.d/30-bootcrew-bootc-modules.conf && \
+      sh -c 'export KERNEL_VERSION="$(basename "$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)")" && \
+      dracut --force --no-hostonly --reproducible --zstd --verbose --kver "$KERNEL_VERSION"  "/usr/lib/modules/$KERNEL_VERSION/initramfs.img"'
 
 RUN rm -rf /home/build/.cache/* && \
     rm -rf \
         /tmp/* \
         /var/cache/pacman/pkg/*
 
-# This fixes a user/groups error with rebasing from other problematic images.
-# FIXME Do NOT remove until fixed upstream or fixed universally. Updating with new fix also fine. Script created by Tulip.
-
-RUN mkdir -p /usr/lib/systemd/system-preset /usr/lib/systemd/system
-
-RUN echo -e '#!/bin/sh\ncat /usr/lib/sysusers.d/*.conf | grep -e "^g" | grep -v -e "^#" | awk "NF" | awk '\''{print $2}'\'' | grep -v -e "wheel" -e "root" -e "sudo" | xargs -I{} sed -i "/{}/d" $1' > /usr/libexec/xeniaos-group-fix
-RUN chmod +x /usr/libexec/xeniaos-group-fix
-RUN echo -e '[Unit]\n\
-Description=Fix groups\n\
-Wants=local-fs.target\n\
-After=local-fs.target\n\
-[Service]\n\
-Type=oneshot\n\
-ExecStart=/usr/libexec/xeniaos-group-fix /etc/group\n\
-ExecStart=/usr/libexec/xeniaos-group-fix /etc/gshadow\n\
-ExecStart=systemd-sysusers\n\
-[Install]\n\
-WantedBy=default.target multi-user.target' > /usr/lib/systemd/system/xeniaos-group-fix.service
-
-RUN echo -e "enable xeniaos-group-fix.service" > /usr/lib/systemd/system-preset/01-xeniaos-group-fix.preset
-RUN systemctl enable xeniaos-group-fix.service
-
 # Necessary for general behavior expected by image-based systems
 RUN sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd" && \
     rm -rf /boot /home /root /usr/local /srv /var /usr/lib/sysimage/log /usr/lib/sysimage/cache/pacman/pkg && \
-    mkdir -p /sysroot /boot /usr/lib/ostree /var && \
-    ln -s sysroot/ostree /ostree && ln -s var/roothome /root && ln -s var/srv /srv && ln -s var/opt /opt && ln -s var/mnt /mnt && ln -s var/home /home && \
-    echo "$(for dir in opt home srv mnt usrlocal ; do echo "d /var/$dir 0755 root root -" ; done)" | tee -a "/usr/lib/tmpfiles.d/bootc-base-dirs.conf" && \
-    printf "d /var/roothome 0700 root root -\nd /run/media 0755 root root -" | tee -a "/usr/lib/tmpfiles.d/bootc-base-dirs.conf" && \
-    printf '[composefs]\nenabled = yes\n[sysroot]\nreadonly = true\n' | tee "/usr/lib/ostree/prepare-root.conf"
+    mkdir -p /var /sysroot /boot /usr/lib/ostree /var && \
+    ln -s var/opt /opt && \
+    ln -s var/roothome /root && \
+    ln -s var/home /home && \
+    ln -s sysroot/ostree /ostree && \
+    ln -s var/srv /srv && \
+    echo -e "$(for dir in opt usrlocal home srv mnt ; do echo -e "d /var/$dir 0755 root root -" ; done)" | tee -a /usr/lib/tmpfiles.d/bootc-base-dirs.conf && \
+    echo -e "d /var/roothome 0700 root root -" | tee -a /usr/lib/tmpfiles.d/bootc-base-dirs.conf && \
+    echo -e "d /run/media 0755 root root -" | tee -a /usr/lib/tmpfiles.d/bootc-base-dirs.conf && \
+    echo -e "[composefs]\nenabled = yes\n[sysroot]\nreadonly = true" | tee "/usr/lib/ostree/prepare-root.conf"
 
 RUN bootc container lint
 
