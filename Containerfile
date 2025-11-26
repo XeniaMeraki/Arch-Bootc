@@ -11,13 +11,13 @@
 #      rj].           . r
 #      [[]]11111111111111111]                                   
 #     ][[[]]][11111111111111111<                                 XeniaOS
-#     ][[[[[]]]]]]]]]]]]]]-111111[        Xenia Meraki the transfem package fox | @tulilirockz saved the distro
-#     ]-[[[[[[;]]]]]]]]]]]]]]]]   1             Artists Jasper Valery | Delphic Melody | Chimmie Firefly
-#     ]][[[[[[[[[[[]]]]]]]]]]]]]                          videorelaxant6025 |
-#     1]][[[[[[[[[[[[[[<]]]]]]]]]      
+#     ][[[[[]]]]]]]]]]]]]]-111111[                  Xenia Meraki the transfem package fox
+#     ]-[[[[[[;]]]]]]]]]]]]]]]]   1                         @tulilirockz @hecknt
+#     ]][[[[[[[[[[[]]]]]]]]]]]]]                Artists Jasper Valery | Delphic Melody | Chimmie Firefly
+#     1]][[[[[[[[[[[[[[<]]]]]]]]]                            videorelaxant6025
 #      11]]][[[[[[[[[[[[[[[]]]]]]]                         
 #       111]]]]'[[[[[[[[[[[[[[]]]]
-#         111-]]]]][[[[[[[[[[[[[]]  Software that makes this OS possible - Distros for inspiration and whose members helped in some way
+#         111-]]]]][[[[[[[[[[[[[]]  Software that makes this OS possible - Distros/software for inspiration and whose members helped in some way
 #           11111]]]]]_[[[[[[[[[[]                   Arch | Bootc | Aurora | Bazzite | Ublue | Zirconium | Bluefin
 #               11111]]]i[[[[[[[[                          Docker | Podman | Fedora | Proton | Wine | Ubuntu
 #                  1111]]+[[[[[[^                                @kylegospo @valerie-tar-gz @cyrv6737
@@ -27,10 +27,6 @@
 #                       `            Credit art: Cathodegaytube for original art, @catumin for ascii-ification
 
 FROM docker.io/cachyos/cachyos-v3:latest AS final
-
-# Move everything from `/var` to `/usr/lib/sysimage` so behavior around pacman remains the same on `bootc usroverlay`'d systems
-RUN grep "= */var" /etc/pacman.conf | sed "/= *\/var/s/.*=// ; s/ //" | xargs -n1 sh -c 'mkdir -p "/usr/lib/sysimage/$(dirname $(echo $1 | sed "s@/var/@@"))" && mv -v "$1" "/usr/lib/sysimage/$(echo "$1" | sed "s@/var/@@")"' '' && \
-    sed -i -e "/= *\/var/ s/^#//" -e "s@= */var@= /usr/lib/sysimage@g" -e "/DownloadUser/d" /etc/pacman.conf
 
 ENV DRACUT_NO_XATTR=1
 
@@ -49,6 +45,10 @@ ENV DRACUT_NO_XATTR=1
 ########################################################################################################################################
 # Section 1 - Package Installs | We grab every package we can from official arch repo/set up all non-flatpak apps for user ^^ ##########
 ########################################################################################################################################
+
+# Move everything from `/var` to `/usr/lib/sysimage` so behavior around pacman remains the same on `bootc usroverlay`'d systems
+RUN grep "= */var" /etc/pacman.conf | sed "/= *\/var/s/.*=// ; s/ //" | xargs -n1 sh -c 'mkdir -p "/usr/lib/sysimage/$(dirname $(echo $1 | sed "s@/var/@@"))" && mv -v "$1" "/usr/lib/sysimage/$(echo "$1" | sed "s@/var/@@")"' '' && \
+    sed -i -e "/= *\/var/ s/^#//" -e "s@= */var@= /usr/lib/sysimage@g" -e "/DownloadUser/d" /etc/pacman.conf
 
 # Set it up such that pacman is always cleaned after installs
 RUN echo -e "[Trigger]\n\
@@ -119,7 +119,6 @@ RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-util
 # -Package list- Chaotic-AUR precompiled packages
 # niri-git | input-remapper-git | vesktop | sc-controller | flatpak-git | dms-shell-git | ttf-twemoji |
 # ttf-symbola | opentabletdriver | colloid-catppuccin-gtk-theme-git | colloid-catppuccin-theme-git
-# paru | 
 
 # Arch apps
 # Dolphin | Chezmoi | Gnome-Disks | Docker | Podman | SCX Manager | Steam | Mangohud
@@ -184,9 +183,9 @@ RUN userdel -r build && \
 
 #AUR script credit @KyleGospo @cyrv6737
 
-########################################################################################################################################
-# Section 4 - Flatpaks preinstalls | Don't forget. Always, somewhere, someone is fighting for you. You are not alone. ##################
-########################################################################################################################################
+#######################################################################################################################################################
+# Section 4 - Flatpaks preinstalls | Don't forget. Always, somewhere, someone is fighting for you. You are not alone. -Madoka Magica ##################
+#######################################################################################################################################################
 
 RUN mkdir -p /usr/share/flatpak/preinstall.d/
 
@@ -294,9 +293,11 @@ DEFAULT_HOSTNAME="XeniaOS"' > /etc/os-release
 # Symlink Vi to Vim / Make it to where a user can use vi in terminal command to use vim automatically | Thanks Tulip
 RUN ln -s ./vim /usr/bin/vi
 
-# Redirect neofetch & fastfetch -> hyfetch
-RUN ln -sf /usr/bin/hyfetch /usr/local/bin/neofetch
-RUN ln -sf /usr/bin/hyfetch /usr/local/bin/fastfetch
+# Redirect neofetch & fastfetch -> hyfetch (Feel free to undo this as a user, just to avoid confusion on admin side)
+RUN ln -sf /usr/bin/hyfetch /usr/bin/neofetch && \
+    ln -sf /usr/bin/hyfetch /usr/local/bin/neofetch && \
+    echo -e 'alias neofetch="hyfetch"' >  /etc/profile.d/fetch-aliases.sh && \
+    echo -e 'alias fastfetch="hyfetch"' >> /etc/profile.d/fetch-aliases.sh
 
 # Symlink GTK to Libadwaita
 RUN mkdir -p /usr/share/gtk-4.0
@@ -306,10 +307,12 @@ RUN ln -sf /usr/share/themes/Colloid-Orange-Dark-Catppuccin/gtk-4.0/{assets,gtk.
 
 # Use Chezmoi to set up config files, visual assets, avatars, and wallpapers
 RUN rm -rf /usr/share/xeniaos/zdots/ && \
-      git clone --depth=1 https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots/
+    mkdir -p /usr/share/xeniaos/zdots/ && \
+    git clone https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots/
 
 RUN rm -rf /usr/share/xeniaos/wallpapers/ && \
-      git clone --depth=1 https://github.com/XeniaMeraki/XeniaOS-G-Euphoria /usr/share/xeniaos/wallpapers
+    mkdir -p /usr/share/xeniaos/wallpapers && \
+    git clone https://github.com/XeniaMeraki/XeniaOS-G-Euphoria /usr/share/xeniaos/wallpapers
 
 # System-wide default application associations for filetype calls
 RUN mkdir -p /etc/xdg/
@@ -355,14 +358,14 @@ RUN echo -e "vm.max_map_count = 2147483642" > /etc/sysctl.d/80-gamecompatibility
 # To turn off, run sudo ln -s /dev/null /etc/media-automount.d/_all.conf
 RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator /tmp/media-automount-generator && \
     cd /tmp/media-automount-generator && \
-    ./install_udev.sh && \
+    DESTDIR=/usr/local ./install_udev.sh && \
     rm -rf /tmp/media-automount-generator
 
 ########################################################################################################################################
 # Section 6 - Set up brew | terminal packages manager utility | https://brew.sh/ | Foxy witch will mix up a brew for you! ##############
 ########################################################################################################################################
 
-RUN curl -s https://api.github.com/repos/ublue-os/packages/releases/latest \
+RUN curl --retry 5 --retry-all-errors -fSsLo https://api.github.com/repos/ublue-os/packages/releases/latest \
     | jq -r '.assets[] | select(.name | test("homebrew-x86_64.*tar.zst")) | .browser_download_url' \
     | xargs wget -O /usr/share/homebrew.tar.zst
 
@@ -378,8 +381,8 @@ ConditionPathExists=/usr/share/homebrew.tar.zst\n\
 [Service]\n\
 Type=oneshot\n\
 ExecStart=/usr/bin/mkdir -p /tmp/homebrew\n\
-ExecStart=/usr/bin/tar --zstd -xf /usr/share/homebrew.tar.zst -C /tmp/homebrew\n\
 ExecStart=/usr/bin/mkdir -p /var/home/linuxbrew\n\
+ExecStart=/usr/bin/tar --zstd -xf /usr/share/homebrew.tar.zst -C /tmp/homebrew\n\
 ExecStart=/usr/bin/cp -R -n /tmp/homebrew/home/linuxbrew/.linuxbrew /var/home/linuxbrew\n\
 ExecStart=/usr/bin/rm -rf /tmp/homebrew\n\
 \n\
@@ -489,7 +492,6 @@ ExecStart=systemd-sysusers\n\
 WantedBy=default.target multi-user.target' > /usr/lib/systemd/system/xeniaos-group-fix.service
 
 RUN echo -e "enable xeniaos-group-fix.service" > /usr/lib/systemd/system-preset/01-xeniaos-group-fix.preset
-RUN systemctl enable xeniaos-group-fix.service
 
 # System services (Machine Boot level)
 RUN systemctl enable polkit.service \
@@ -498,15 +500,17 @@ RUN systemctl enable polkit.service \
     tuned-ppd.service \
     firewalld.service \
     greetd.service \
-    flatpak-preinstall.service
+    flatpak-preinstall.service \
+    xeniaos-group-fix.service
 
 # User services (Niri/user session level)
 RUN systemctl --global enable \
-      niri.service \
-      dms.service \
-      udiskie.service \
-      chezmoi-init.service \
-      chezmoi-update.timer
+    niri.service \
+    dms.service \
+    udiskie.service \
+    chezmoi-init.service \
+    chezmoi-update.service \
+    chezmoi-update.timer
 
 ########################################################################################################################################
 # Section 8 - CachyOS settings | Since we have the CachyOS kernel, we gotta put it to good use ≽^•⩊•^≼ ################################
@@ -597,20 +601,15 @@ label_width = 150' > /etc/greetd/regreet.toml
 # Section 10 - Final Bootc Setup | The horrors are endless. but we stay silly :3c -junoinfernal -maia arson crimew ######################
 ########################################################################################################################################
 
-# Add 3rd party bootc package repo via Hecknt FIXME Eventually remove this with Arch/Chaotic AUR proper host | https://github.com/hecknt/arch-bootc-pkgs
-RUN pacman-key --recv-key 5DE6BF3EBC86402E7A5C5D241FA48C960F9604CB --keyserver keyserver.ubuntu.com
-RUN pacman-key --lsign-key 5DE6BF3EBC86402E7A5C5D241FA48C960F9604CB
-RUN echo -e '[bootc]\nSigLevel = Required\nServer=https://github.com/hecknt/arch-bootc-pkgs/releases/download/$repo' >> /etc/pacman.conf
-
-RUN pacman -Sy --noconfirm
-
-RUN pacman -S --noconfirm bootc/bootc bootc/bootupd bootc/bcvk
-
 # FIXME https://github.com/bootc-dev/bootc/issues/1801
-RUN printf "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/lib/systemd/system\n" | tee /usr/lib/dracut/dracut.conf.d/30-bootcrew-fix-bootc-module.conf && \
-      printf 'hostonly=no\nadd_dracutmodules+=" ostree bootc "' | tee /usr/lib/dracut/dracut.conf.d/30-bootcrew-bootc-modules.conf && \
-      sh -c 'export KERNEL_VERSION="$(basename "$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)")" && \
-      dracut --force --no-hostonly --reproducible --zstd --verbose --kver "$KERNEL_VERSION"  "/usr/lib/modules/$KERNEL_VERSION/initramfs.img"'
+RUN --mount=type=tmpfs,dst=/tmp --mount=type=tmpfs,dst=/root \
+    pacman -S --noconfirm make git rust && \
+    git clone "https://github.com/bootc-dev/bootc.git" /tmp/bootc && \
+    make -C /tmp/bootc bin install-all && \
+    printf "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/lib/systemd/system\n" | tee /usr/lib/dracut/dracut.conf.d/30-bootcrew-fix-bootc-module.conf && \
+    printf 'reproducible=yes\nhostonly=no\ncompress=zstd\nadd_dracutmodules+=" ostree bootc "' | tee "/usr/lib/dracut/dracut.conf.d/30-bootcrew-bootc-container-build.conf" && \
+    dracut --force "$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)/initramfs.img" && \
+    pacman -Rns --noconfirm make git rust base-devel
 
 RUN rm -rf /home/build/.cache/* && \
     rm -rf \
@@ -620,16 +619,11 @@ RUN rm -rf /home/build/.cache/* && \
 # Necessary for general behavior expected by image-based systems
 RUN sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd" && \
     rm -rf /boot /home /root /usr/local /srv /var /usr/lib/sysimage/log /usr/lib/sysimage/cache/pacman/pkg && \
-    mkdir -p /var /sysroot /boot /usr/lib/ostree /var && \
-    ln -s var/opt /opt && \
-    ln -s var/roothome /root && \
-    ln -s var/home /home && \
-    ln -s sysroot/ostree /ostree && \
-    ln -s var/srv /srv && \
-    echo -e "$(for dir in opt usrlocal home srv mnt ; do echo -e "d /var/$dir 0755 root root -" ; done)" | tee -a /usr/lib/tmpfiles.d/bootc-base-dirs.conf && \
-    echo -e "d /var/roothome 0700 root root -" | tee -a /usr/lib/tmpfiles.d/bootc-base-dirs.conf && \
-    echo -e "d /run/media 0755 root root -" | tee -a /usr/lib/tmpfiles.d/bootc-base-dirs.conf && \
-    echo -e "[composefs]\nenabled = yes\n[sysroot]\nreadonly = true" | tee "/usr/lib/ostree/prepare-root.conf"
+    mkdir -p /sysroot /boot /usr/lib/ostree /var && \
+    ln -s sysroot/ostree /ostree && ln -s var/roothome /root && ln -s var/srv /srv && ln -s var/opt /opt && ln -s var/mnt /mnt && ln -s var/home /home && \
+    echo "$(for dir in opt home srv mnt usrlocal ; do echo "d /var/$dir 0755 root root -" ; done)" | tee -a "/usr/lib/tmpfiles.d/bootc-base-dirs.conf" && \
+    printf "d /var/roothome 0700 root root -\nd /run/media 0755 root root -" | tee -a "/usr/lib/tmpfiles.d/bootc-base-dirs.conf" && \
+    printf '[composefs]\nenabled = yes\n[sysroot]\nreadonly = true\n' | tee "/usr/lib/ostree/prepare-root.conf"
 
 RUN bootc container lint
 
