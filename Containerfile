@@ -365,9 +365,9 @@ RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator /tm
 # Section 6 - Set up brew | terminal packages manager utility | https://brew.sh/ | Foxy witch will mix up a brew for you! ##############
 ########################################################################################################################################
 
-RUN curl --retry 5 --retry-all-errors -fSsLo https://api.github.com/repos/ublue-os/packages/releases/latest \
-    | jq -r '.assets[] | select(.name | test("homebrew-x86_64.*tar.zst")) | .browser_download_url' \
-    | xargs wget -O /usr/share/homebrew.tar.zst
+RUN curl -s https://api.github.com/repos/ublue-os/packages/releases/latest \
+    | jq -r '.assets[] | select(.name | test("homebrew-x86_64.*\\.tar\\.zst")) | .browser_download_url' \
+    | xargs -I {} wget -O /usr/share/homebrew.tar.zst {}
 
 RUN echo '[[ -d /home/linuxbrew/.linuxbrew && $- == *i* ]] && \
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' > /etc/profile.d/brew.sh
@@ -529,15 +529,17 @@ net.ipv4.tcp_congestion_control=bbr' > /etc/sysctl.d/99-bbr3.conf
 
 # Catppuccin style cursor, in a lovely orange, much like my furrrrr~
 RUN mkdir -p /usr/share/icons && \
-      curl --retry 5 --retry-all-errors -LOsS https://github.com/catppuccin/cursors/releases/download/v2.0.0/catppuccin-mocha-peach-cursors.zip && \
-      unzip -q catppuccin-mocha-peach-cursors.zip -d /usr/share/icons && \
-      rm catppuccin-mocha-peach-cursors.zip && \
-      ln -s /usr/share/icons/Catppuccin-Mocha-Peach-Cursors /usr/share/icons/default
+    curl -fsSLO https://github.com/catppuccin/cursors/releases/download/v2.0.0/catppuccin-mocha-peach-cursors.zip && \
+    unzip -q catppuccin-mocha-peach-cursors.zip -d /usr/share/icons && \
+    rm catppuccin-mocha-peach-cursors.zip && \
+    rm -rf /usr/share/icons/default && \
+    ln -s /usr/share/icons/Catppuccin-Mocha-Peach-Cursors /usr/share/icons/default
 
 # Add Maple Mono font, it's so cute! It's a pain to download! You'll love it.
 RUN mkdir -p "/usr/share/fonts/Maple Mono" && \
     curl --retry 5 --retry-all-errors -fSsLo "/tmp/maple.zip" "$(curl -s https://api.github.com/repos/subframe7536/maple-font/releases/latest | jq -r -c '.assets[] | select(.name == "MapleMono-Variable.zip") | .browser_download_url')" && \
-    unzip -q "/tmp/maple.zip" -d "/usr/share/fonts/Maple Mono"
+    unzip -q "/tmp/maple.zip" -d "/usr/share/fonts/Maple Mono" && \
+    fc-cache -f
 
 # Add config for dolphin to Niri and switch away from GTK/Nautilus, use Dolphin for file chooser.
 RUN echo -e '[preferred] \n\
