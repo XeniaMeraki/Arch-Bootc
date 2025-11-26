@@ -271,8 +271,8 @@ RUN mkdir -p /etc/plymouth && \
       wget --tries=5 -O /usr/share/plymouth/themes/spinner/watermark.png \
       https://raw.githubusercontent.com/XeniaMeraki/XeniaOS-G-Euphoria/refs/heads/main/xeniaos_textlogo_plymouth_delphic_melody.png
 
-RUN echo "%wheel ALL=(ALL:ALL) ALL" >> /etc/sudoers && \
-echo "Defaults env_reset,pwfeedback" >> /etc/sudoers
+RUN echo -e "%wheel ALL=(ALL:ALL) ALL" | tee -a /etc/sudoers && \
+    echo -e "Defaults env_reset,pwfeedback" >> /etc/sudoers
 
 # Set up zram, this will help users not run out of memory. Fox will fix!
 RUN echo -e '[zram0]\nzram-size = min(ram, 8192)' >> /usr/lib/systemd/zram-generator.conf
@@ -295,8 +295,10 @@ RUN ln -s ./vim /usr/bin/vi
 
 # Redirect neofetch & fastfetch -> hyfetch (Feel free to undo this as a user, just to avoid confusion on admin side)
 RUN ln -sf /usr/bin/hyfetch /usr/bin/neofetch && \
+    ln -sf /usr/bin/hyfetch /usr/bin/fastfetch && \
     ln -sf /usr/bin/hyfetch /usr/local/bin/neofetch && \
-    echo -e 'alias neofetch="hyfetch"' >  /etc/profile.d/fetch-aliases.sh && \
+    ln -sf /usr/bin/hyfetch /usr/local/bin/fastfetch && \
+    echo -e 'alias neofetch="hyfetch"' > /etc/profile.d/fetch-aliases.sh && \
     echo -e 'alias fastfetch="hyfetch"' >> /etc/profile.d/fetch-aliases.sh
 
 # Symlink GTK to Libadwaita
@@ -306,12 +308,7 @@ RUN ln -sf /usr/share/themes/Colloid-Orange-Dark-Catppuccin/gtk-4.0/{assets,gtk.
        /usr/share/gtk-4.0/
 
 # Use Chezmoi to set up config files, visual assets, avatars, and wallpapers
-RUN rm -rf /usr/share/xeniaos/zdots/ && \
-    mkdir -p /usr/share/xeniaos/zdots/ && \
-    git clone https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots/
-
-RUN rm -rf /usr/share/xeniaos/wallpapers/ && \
-    mkdir -p /usr/share/xeniaos/wallpapers && \
+RUN git clone https://github.com/XeniaMeraki/XeniaOS-HRT /usr/share/xeniaos/zdots/ && \
     git clone https://github.com/XeniaMeraki/XeniaOS-G-Euphoria /usr/share/xeniaos/wallpapers
 
 # System-wide default application associations for filetype calls
