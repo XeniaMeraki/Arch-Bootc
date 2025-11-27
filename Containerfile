@@ -108,7 +108,7 @@ RUN pacman -S --noconfirm cups cups-browsed hplip
 # Desktop Environment needs
 RUN pacman -S --noconfirm greetd xwayland-satellite xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gnome \
       ffmpegthumbs kdegraphics-thumbnailers kdenetwork-filesharing kio-admin chezmoi matugen accountsservice quickshell dgop cliphist cava dolphin \ 
-      breeze brightnessctl wlsunset ddcutil xdg-utils kservice5 archlinux-xdg-menu shared-mime-info kio glycin
+      breeze brightnessctl wlsunset ddcutil xdg-utils kservice5 archlinux-xdg-menu shared-mime-info kio glycin greetd-regreet
 
 # User frontend programs/apps
 RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-utility mangohud lib32-mangohud
@@ -168,7 +168,7 @@ RUN --mount=type=tmpfs,dst=/tmp \
 
 # AUR packages
 RUN paru -S --noconfirm \
-        aur/uupd aur/greetd-regreet-git
+        aur/uupd
 
 USER root
 WORKDIR /
@@ -502,7 +502,7 @@ RUN systemctl enable polkit.service \
     greetd.service \
     flatpak-preinstall.service \
     xeniaos-group-fix.service \
-    uupd.service
+    uupd.timer
 
 # User services (Niri/user session level)
 RUN systemctl --global enable \
@@ -555,7 +555,7 @@ RUN echo -e 'eval "$(starship init bash)"' >> /etc/bash.bashrc
 # ReGreet login shell setup
 RUN mkdir -p /etc/greetd/
 
-RUN echo -e 'spawn-sh-at-startup "regreet; niri msg action quit --skip-confirmation"\n\
+RUN echo -e 'spawn-sh-at-startup "regreet >/dev/null 2>&1; niri msg action quit --skip-confirmation"\n\
 hotkey-overlay {\n\
     skip-at-startup\n\
 }\n\
@@ -567,7 +567,7 @@ RUN echo -e '[terminal]\n\
 vt = 1\n\
 \n\
 [default_session]\n\
-command = "niri --config /etc/greetd/niri.kdl"\n\
+command = "/usr/bin/dbus-run-session /usr/bin/niri --config /etc/greetd/niri.kdl >/dev/null 2>&1"\n\
 user = "greeter"' > /etc/greetd/config.toml
 
 RUN echo -e '[background]\n\
