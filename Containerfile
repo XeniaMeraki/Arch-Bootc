@@ -81,7 +81,7 @@ RUN pacman -S --noconfirm noto-fonts noto-fonts-cjk noto-fonts-emoji unicode-emo
       ttf-ibm-plex ttf-jetbrains-mono-nerd otf-font-awesome ttf-jetbrains-mono
 
 # CLI Utilities
-RUN pacman -S --noconfirm sudo bash bash-completion fastfetch btop jq less lsof nano openssh powertop man-db wget yt-dlp \
+RUN pacman -S --noconfirm sudo sudo-rs bash bash-completion fastfetch btop jq less lsof nano openssh powertop man-db wget yt-dlp \
       tree usbutils vim wl-clipboard unzip ptyxis glibc-locales tar udev starship tuned-ppd tuned hyfetch curl patchelf base-devel
 
 # Virtualization \ Containerization
@@ -294,13 +294,13 @@ DEFAULT_HOSTNAME="XeniaOS"' > /etc/os-release
 # Symlink Vi to Vim / Make it to where a user can use vi in terminal command to use vim automatically | Thanks Tulip
 RUN ln -s ./vim /usr/bin/vi
 
-# Redirect neofetch & fastfetch -> hyfetch (Feel free to undo this as a user, just to avoid confusion on admin side)
-RUN ln -sf /usr/bin/hyfetch /usr/bin/neofetch && \
-    ln -sf /usr/bin/hyfetch /usr/bin/fastfetch && \
-    ln -sf /usr/bin/hyfetch /usr/local/bin/neofetch && \
-    ln -sf /usr/bin/hyfetch /usr/local/bin/fastfetch && \
-    echo -e 'alias neofetch="hyfetch"' > /etc/profile.d/fetch-aliases.sh && \
-    echo -e 'alias fastfetch="hyfetch"' >> /etc/profile.d/fetch-aliases.sh
+# Redirect neofetch & fastfetch -> hyfetch | Feel free to undo this as a user 
+# Just to avoid confusion on admin side/make things aesthetic across the board
+RUN ln -s /usr/bin/hyfetch /usr/bin/neofetch && \
+    echo -e 'alias fastfetch="hyfetch"' > /etc/profile.d/aliases.sh
+
+# Symlink sudo-rs to sudo, memory safe https://github.com/trifectatechfoundation/sudo-rs#differences-from-original-sudo
+RUN ln -s su-rs /usr/bin/su && ln -s sudo-rs /usr/bin/sudo
 
 # Symlink GTK to Libadwaita
 RUN mkdir -p /usr/share/gtk-4.0
