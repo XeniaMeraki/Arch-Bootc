@@ -99,7 +99,8 @@ RUN pacman -S --noconfirm libmtp networkmanager-openconnect networkmanager-openv
 RUN pacman -S --noconfirm espeak-ng orca
 
 # Pipewire
-RUN pacman -S --noconfirm pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber
+RUN pacman -S --noconfirm pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber \
+    alsa-firmware linux-firmware-intel lib32-pipewire pipewire-jack pipewire-audio
 
 # Printer
 RUN pacman -S --noconfirm cups cups-browsed hplip
@@ -498,7 +499,8 @@ RUN systemctl enable polkit.service \
     firewalld.service \
     greetd.service \
     flatpak-preinstall.service \
-    xeniaos-group-fix.service
+    xeniaos-group-fix.service \
+    pipewire-pulse.service
 
 # User services (Niri/user session level)
 RUN systemctl --global enable \
