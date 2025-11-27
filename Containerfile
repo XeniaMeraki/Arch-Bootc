@@ -300,7 +300,7 @@ RUN ln -s /usr/bin/hyfetch /usr/bin/neofetch && \
     echo -e 'alias fastfetch="hyfetch"' > /etc/profile.d/aliases.sh
 
 # Symlink sudo-rs to sudo, memory safe https://github.com/trifectatechfoundation/sudo-rs#differences-from-original-sudo
-RUN ln -s su-rs /usr/bin/su && ln -s sudo-rs /usr/bin/sudo
+RUN ln -sf su-rs /usr/bin/su && ln -sf sudo-rs /usr/bin/sudo
 
 # Symlink GTK to Libadwaita
 RUN mkdir -p /usr/share/gtk-4.0
@@ -551,6 +551,8 @@ RUN echo -e 'eval "$(starship init bash)"' >> /etc/bash.bashrc
 
 # ReGreet login shell setup
 
+RUN useradd -M -G video,input -s /usr/bin/nologin greeter || true
+
 RUN mkdir -p /etc/greetd/
 
 RUN echo -e 'spawn-sh-at-startup "regreet; niri msg action quit --skip-confirmation"\n\
@@ -565,7 +567,7 @@ RUN echo -e '[terminal]\n\
 vt = 1\n\
 \n\
 [default_session]\n\
-command = "niri --config /etc/greetd/niri.kdl"\n\
+command = ["niri", "--config", "/etc/greetd/niri.kdl"]\n\
 user = "greeter"' > /etc/greetd/config.toml
 
 RUN echo -e '[background]\n\
@@ -590,6 +592,7 @@ reboot = ["systemctl", "reboot"]\n\
 poweroff = ["systemctl", "poweroff"]\n\
 [appearance]\n\
 greeting_msg = "Welcome to the fox den!~"\n\
+\n\
 [widget.clock]\n\
 format = "%a %H:%M"\n\
 \n\
