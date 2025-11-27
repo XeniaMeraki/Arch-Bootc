@@ -499,8 +499,7 @@ RUN systemctl enable polkit.service \
     firewalld.service \
     greetd.service \
     flatpak-preinstall.service \
-    xeniaos-group-fix.service \
-    pipewire-pulse.service
+    xeniaos-group-fix.service
 
 # User services (Niri/user session level)
 RUN systemctl --global enable \
