@@ -106,7 +106,7 @@ RUN pacman -S --noconfirm pipewire pipewire-pulse pipewire-zeroconf pipewire-ffa
 RUN pacman -S --noconfirm cups cups-browsed hplip
 
 # Desktop Environment needs
-RUN pacman -S --noconfirm greetd xwayland-satellite greetd-regreet xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gnome \
+RUN pacman -S --noconfirm greetd xwayland-satellite xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gnome \
       ffmpegthumbs kdegraphics-thumbnailers kdenetwork-filesharing kio-admin chezmoi matugen accountsservice quickshell dgop cliphist cava dolphin \ 
       breeze brightnessctl wlsunset ddcutil xdg-utils kservice5 archlinux-xdg-menu shared-mime-info kio glycin
 
@@ -168,7 +168,7 @@ RUN --mount=type=tmpfs,dst=/tmp \
 
 # AUR packages
 RUN paru -S --noconfirm \
-        aur/uupd
+        aur/uupd aur/greetd-regreet-git
 
 USER root
 WORKDIR /
@@ -381,8 +381,10 @@ Type=oneshot\n\
 ExecStart=/usr/bin/mkdir -p /tmp/homebrew\n\
 ExecStart=/usr/bin/mkdir -p /var/home/linuxbrew\n\
 ExecStart=/usr/bin/tar --zstd -xf /usr/share/homebrew.tar.zst -C /tmp/homebrew\n\
-ExecStart=/usr/bin/cp -R -n /tmp/homebrew/home/linuxbrew/.linuxbrew /var/home/linuxbrew\n\
+ExecStart=/usr/bin/cp -R -n /tmp/homebrew/linuxbrew/.linuxbrew /var/home/linuxbrew\n\
+ExecStart=/usr/bin/chown -R 1000:1000 /var/home/linuxbrew\n\
 ExecStart=/usr/bin/rm -rf /tmp/homebrew\n\
+ExecStart=/usr/bin/touch /etc/.linuxbrew\n\
 \n\
 [Install]\n\
 WantedBy=multi-user.target" > /usr/lib/systemd/system/brew-setup.service
@@ -550,9 +552,6 @@ org.freedesktop.impl.portal.Notification=kde;gtk;gnome' > /usr/share/xdg-desktop
 RUN echo -e 'eval "$(starship init bash)"' >> /etc/bash.bashrc
 
 # ReGreet login shell setup
-
-RUN useradd -M -G video,input -s /usr/bin/nologin greeter || true
-
 RUN mkdir -p /etc/greetd/
 
 RUN echo -e 'spawn-sh-at-startup "regreet; niri msg action quit --skip-confirmation"\n\
@@ -573,7 +572,7 @@ user = "greeter"' > /etc/greetd/config.toml
 RUN echo -e '[background]\n\
 path = "/usr/share/xeniaos/wallpapers/3_hypno_chimmie_firefly_videorelaxant6025.png"\n\
 \n\
-fit = "fill"\n\
+fit = "Fill"\n\
 [GTK]\n\
 application_prefer_dark_theme = true\n\
 \n\
