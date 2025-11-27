@@ -567,7 +567,7 @@ RUN echo -e '[terminal]\n\
 vt = 1\n\
 \n\
 [default_session]\n\
-command = ["niri", "--config", "/etc/greetd/niri.kdl"]\n\
+command = "niri --config /etc/greetd/niri.kdl"\n\
 user = "greeter"' > /etc/greetd/config.toml
 
 RUN echo -e '[background]\n\
