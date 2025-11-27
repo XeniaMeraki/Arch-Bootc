@@ -100,7 +100,7 @@ RUN pacman -S --noconfirm espeak-ng orca
 
 # Pipewire
 RUN pacman -S --noconfirm pipewire pipewire-pulse pipewire-zeroconf pipewire-ffado pipewire-libcamera sof-firmware wireplumber \
-    alsa-firmware linux-firmware-intel lib32-pipewire pipewire-jack pipewire-audio
+    alsa-firmware lib32-pipewire pipewire-jack pipewire-audio
 
 # Printer
 RUN pacman -S --noconfirm cups cups-browsed hplip
