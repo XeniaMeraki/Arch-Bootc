@@ -117,15 +117,16 @@ RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-util
 # Section 2 - Package List | For my info and yours too! No secrets here. | Enjoy your life, and love everyone around you as much as possible ########
 #######################################################################################################################################################
 
-# -Package list- Chaotic-AUR precompiled packages
+# -Package list- Chaotic-AUR and AUR
 # niri-git | input-remapper-git | vesktop | sc-controller | flatpak-git | dms-shell-git | ttf-twemoji |
 # ttf-symbola | opentabletdriver | colloid-catppuccin-gtk-theme-git | colloid-catppuccin-theme-git
+# OBS | OBSvk | Bootc | uupd | 
 
 # Arch apps
 # Dolphin | Chezmoi | Gnome-Disks | Docker | Podman | SCX Manager | Steam | Mangohud
 
 # Flatpaks
-# Bazaar | Krita | Elisa | Pinta | OBS | Ark | Cave Story | Faugus Launcher | ProtonUp-QT | Kdenlive |
+# Bazaar | Krita | Elisa | Pinta | Ark | Cave Story | Faugus Launcher | ProtonUp-QT | Kdenlive |
 # Okular | Kate | Warehouse | Fedora Media Writer | Gear Lever | Haruna | Space Cadet Pinball | Gwenview
 # Audacity | Not Tetris 2 | Floorp
 
@@ -146,10 +147,10 @@ RUN echo -e '[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist' >> /etc/
 RUN pacman -Sy --noconfirm
 
 RUN pacman -S --noconfirm \
-    chaotic-aur/niri-git chaotic-aur/input-remapper-git chaotic-aur/vesktop-git chaotic-aur/sc-controller chaotic-aur/flatpak-git \
+    chaotic-aur/niri-git chaotic-aur/input-remapper-git chaotic-aur/sc-controller chaotic-aur/flatpak-git \
     chaotic-aur/dms-shell-git chaotic-aur/ttf-twemoji chaotic-aur/ttf-symbola chaotic-aur/opentabletdriver chaotic-aur/qt6ct-kde \
     chaotic-aur/colloid-catppuccin-gtk-theme-git chaotic-aur/colloid-catppuccin-theme-git chaotic-aur/adwaita-qt5-git \
-    chaotic-aur/adwaita-qt6-git chaotic-aur/bootc
+    chaotic-aur/adwaita-qt6-git chaotic-aur/bootc chaotic-aur/obs-studio-stable chaotic-aur/obs-vkcapture-git
 
 # Regular AUR Build Section
 # Create build user
@@ -169,7 +170,7 @@ RUN --mount=type=tmpfs,dst=/tmp \
 
 # AUR packages
 RUN paru -S --noconfirm \
-        aur/uupd aur/gnome-themes-extra-gtk2
+        aur/uupd aur/gnome-themes-extra-gtk2 aur/vesktop-bin
 
 USER root
 WORKDIR /
@@ -202,12 +203,6 @@ RUN echo -e "[Flatpak Preinstall org.kde.elisa]\nBranch=stable\nIsRuntime=false"
 
 # Pinta | Image editing! They set out a bit to match paint.net/paintdotnet, it does okay at that.
 RUN echo -e "[Flatpak Preinstall com.github.PintaProject.Pinta]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Pinta.preinstall
-
-# OBS | Video recording/streaming!
-RUN echo -e "[Flatpak Preinstall com.obsproject.Studio]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/OBS.preinstall
-
-# OBSVKCapture | Games capture in OBS scenes on linux!
-RUN echo -e "[Flatpak Preinstall com.obsproject.Studio.Plugin.OBSVkCapture]\nBranch=stable\nIsRuntime=true" > /usr/share/flatpak/preinstall.d/OBSVKCapture.preinstall
 
 # Ark | For unzipping files and file compression! (Imagine a fox whose face you may squish...)
 RUN echo -e "[Flatpak Preinstall org.kde.ark]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Ark.preinstall
@@ -302,7 +297,7 @@ RUN ln -s ./vim /usr/bin/vi
 # Redirect neofetch & fastfetch -> hyfetch | Feel free to undo this as a user 
 # Just to avoid confusion on admin side/make things aesthetic across the board
 RUN ln -s /usr/bin/hyfetch /usr/bin/neofetch && \
-    echo -e 'alias fastfetch=hyfetch' > /etc/profile.d/aliases.sh
+    echo -e 'alias fastfetch="hyfetch"' > /etc/profile.d/aliases.sh
 
 # Symlink GTK to Libadwaita
 RUN mkdir -p /usr/share/gtk-4.0
@@ -425,21 +420,6 @@ StartLimitBurst=3\n\
 [Install]\n\
 WantedBy=multi-user.target' > /usr/lib/systemd/system/flatpak-preinstall.service
 
-# DMS Service Systemd Service
-RUN echo -e '[Unit]\n\
-Description=DMS shell for Niri\n\
-After=niri-session.target\n\
-Wants=niri-session.target\n\
-PartOf=niri-session.target\n\
-\n\
-[Service]\n\
-ExecStart=dms run\n\
-Restart=on-failure\n\
-RestartSec=1\n\
-\n\
-[Install]\n\
-WantedBy=niri-session.target' > /usr/lib/systemd/user/dms.service
-
 RUN echo -e '[Unit]\n\
 Description=udiskie automounter\n\
 \n\
@@ -516,6 +496,7 @@ RUN systemctl enable polkit.service \
 
 # User services (Niri/user session level)
 RUN systemctl --global enable \
+    niri.service \
     dms.service \
     udiskie.service \
     chezmoi-init.service \
