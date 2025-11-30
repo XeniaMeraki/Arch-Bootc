@@ -12,13 +12,13 @@
 #      [[]]11111111111111111]                                   
 #     ][[[]]][11111111111111111<                                 XeniaOS
 #     ][[[[[]]]]]]]]]]]]]]-111111[                  Xenia Meraki the transfem package fox
-#     ]-[[[[[[;]]]]]]]]]]]]]]]]   1                         @tulilirockz @hecknt
+#     ]-[[[[[[;]]]]]]]]]]]]]]]]   1                    Programmers @tulilirockz @hecknt
 #     ]][[[[[[[[[[[]]]]]]]]]]]]]                Artists Jasper Valery | Delphic Melody | Chimmie Firefly
 #     1]][[[[[[[[[[[[[[<]]]]]]]]]                            videorelaxant6025
 #      11]]][[[[[[[[[[[[[[[]]]]]]]                         
 #       111]]]]'[[[[[[[[[[[[[[]]]]
 #         111-]]]]][[[[[[[[[[[[[]]  Software that makes this OS possible - Distros/software for inspiration and whose members helped in some way
-#           11111]]]]]_[[[[[[[[[[]                   Arch | Bootc | Aurora | Bazzite | Ublue | Zirconium | Bluefin
+#           11111]]]]]_[[[[[[[[[[]                   Arch | Bootc | Aurora | Bazzite | Bluebuild | Zirconium | Bluefin
 #               11111]]]i[[[[[[[[                          Docker | Podman | Fedora | Proton | Wine | Ubuntu
 #                  1111]]+[[[[[[^                                @kylegospo @valerie-tar-gz @cyrv6737
 #                    11 ]][[[[[[
@@ -78,11 +78,11 @@ RUN pacman -S --noconfirm librsvg libglvnd qt6-multimedia-ffmpeg plymouth acpid 
 
 # Fonts
 RUN pacman -S --noconfirm noto-fonts noto-fonts-cjk noto-fonts-emoji unicode-emoji noto-fonts-extra ttf-fira-code ttf-firacode-nerd \
-      ttf-ibm-plex ttf-jetbrains-mono-nerd otf-font-awesome ttf-jetbrains-mono
+      ttf-ibm-plex ttf-jetbrains-mono-nerd otf-font-awesome ttf-jetbrains-mono wqy-microhei
 
 # CLI Utilities
 RUN pacman -S --noconfirm sudo sudo-rs bash bash-completion fastfetch btop jq less lsof nano openssh powertop man-db wget yt-dlp \
-      tree usbutils vim wl-clipboard unzip ptyxis glibc-locales tar udev starship tuned-ppd tuned hyfetch curl patchelf base-devel
+      tree usbutils vim wl-clipboard unzip ptyxis glibc-locales tar udev starship tuned-ppd tuned hyfetch curl patchelf
 
 # Virtualization \ Containerization
 RUN pacman -S --noconfirm distrobox docker podman
@@ -93,7 +93,7 @@ RUN pacman -S --noconfirm amd-ucode intel-ucode efibootmgr shim mesa lib32-mesa 
 
 # Network / VPN / SMB / storage
 RUN pacman -S --noconfirm libmtp networkmanager-openconnect networkmanager-openvpn nss-mdns samba smbclient networkmanager firewalld udiskie \
-      udisks2
+      udisks2 iwd
 
 # Accessibility
 RUN pacman -S --noconfirm espeak-ng orca
@@ -108,7 +108,7 @@ RUN pacman -S --noconfirm cups cups-browsed hplip
 # Desktop Environment needs
 RUN pacman -S --noconfirm greetd xwayland-satellite xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gnome \
       ffmpegthumbs kdegraphics-thumbnailers kdenetwork-filesharing kio-admin chezmoi matugen accountsservice quickshell dgop cliphist cava dolphin \ 
-      breeze brightnessctl wlsunset ddcutil xdg-utils kservice5 archlinux-xdg-menu shared-mime-info kio glycin greetd-regreet
+      breeze brightnessctl wlsunset ddcutil xdg-utils kservice5 archlinux-xdg-menu shared-mime-info kio glycin greetd-regreet gnome-themes-extra
 
 # User frontend programs/apps
 RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-utility mangohud lib32-mangohud
@@ -127,7 +127,7 @@ RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-util
 # Flatpaks
 # Bazaar | Krita | Elisa | Pinta | OBS | Ark | Cave Story | Faugus Launcher | ProtonUp-QT | Kdenlive |
 # Okular | Kate | Warehouse | Fedora Media Writer | Gear Lever | Haruna | Space Cadet Pinball | Gwenview
-# Audacity | Filelight | Not Tetris 2 | Floorp
+# Audacity | Not Tetris 2 | Floorp
 
 ##############################################################################################################################################
 # Section 3 - Chaotic AUR / AUR # We grab some precompiled packages from the Chaotic AUR for things not on Arch repos/better updated~ ovo ####
@@ -146,9 +146,10 @@ RUN echo -e '[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist' >> /etc/
 RUN pacman -Sy --noconfirm
 
 RUN pacman -S --noconfirm \
-      chaotic-aur/niri-git chaotic-aur/input-remapper-git chaotic-aur/vesktop-git chaotic-aur/sc-controller chaotic-aur/flatpak-git \
-      chaotic-aur/dms-shell-git chaotic-aur/ttf-twemoji chaotic-aur/ttf-symbola chaotic-aur/opentabletdriver chaotic-aur/qt6ct-kde \
-      chaotic-aur/colloid-catppuccin-gtk-theme-git chaotic-aur/colloid-catppuccin-theme-git
+    chaotic-aur/niri-git chaotic-aur/input-remapper-git chaotic-aur/vesktop-git chaotic-aur/sc-controller chaotic-aur/flatpak-git \
+    chaotic-aur/dms-shell-git chaotic-aur/ttf-twemoji chaotic-aur/ttf-symbola chaotic-aur/opentabletdriver chaotic-aur/qt6ct-kde \
+    chaotic-aur/colloid-catppuccin-gtk-theme-git chaotic-aur/colloid-catppuccin-theme-git chaotic-aur/adwaita-qt5-git \
+    chaotic-aur/adwaita-qt6-git chaotic-aur/bootc
 
 # Regular AUR Build Section
 # Create build user
@@ -168,7 +169,7 @@ RUN --mount=type=tmpfs,dst=/tmp \
 
 # AUR packages
 RUN paru -S --noconfirm \
-        aur/uupd
+        aur/uupd aur/gnome-themes-extra-gtk2
 
 USER root
 WORKDIR /
@@ -190,16 +191,16 @@ RUN userdel -r build && \
 
 RUN mkdir -p /usr/share/flatpak/preinstall.d/
 
-# Bazaar
+# Bazaar | Get most of your software here, flatpaks that are easy to install and use~
 RUN echo -e "[Flatpak Preinstall io.github.kolunmi.Bazaar]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Bazaar.preinstall
 
-# Krita
+# Krita | Image editing + arting!
 RUN echo -e "[Flatpak Preinstall org.kde.krita]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Krita.preinstall
 
-# Elisa
+# Elisa | Music player~
 RUN echo -e "[Flatpak Preinstall org.kde.elisa]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Elisa.preinstall
 
-# Pinta | Image editing! They set out a bit to match paint.net/paintdotnet
+# Pinta | Image editing! They set out a bit to match paint.net/paintdotnet, it does okay at that.
 RUN echo -e "[Flatpak Preinstall com.github.PintaProject.Pinta]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Pinta.preinstall
 
 # OBS | Video recording/streaming!
@@ -211,10 +212,10 @@ RUN echo -e "[Flatpak Preinstall com.obsproject.Studio.Plugin.OBSVkCapture]\nBra
 # Ark | For unzipping files and file compression! (Imagine a fox whose face you may squish...)
 RUN echo -e "[Flatpak Preinstall org.kde.ark]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Ark.preinstall
 
-# Cave Story, a free, public domain platformer! It"s historically important to videogames and platformers as a genre.
+# Cave Story, a free, public domain platformer! It's historically important to videogames and platformers as a genre.
 RUN echo -e "[Flatpak Preinstall com.gitlab.coringao.cavestory-nx]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/CaveStory.preinstall
 
-# Faugus Launcher | This is fantastic for using windows software on linux, exes and whatnot
+# Faugus Launcher | This is fantastic for using windows software on linux, throwing exes at it and whatnot
 RUN echo -e "[Flatpak Preinstall io.github.faugus.faugus-launcher]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/FaugusLauncher.preinstall
 
 # ProtonUp-Qt | For installing different versions of proton! Emulation for windows games via Steam/Valve's work
@@ -250,9 +251,6 @@ RUN echo -e "[Flatpak Preinstall org.kde.gwenview]\nBranch=stable\nIsRuntime=fal
 # Audacity | Edit audio! We love Audacity~ Wonderful software.
 RUN echo -e "[Flatpak Preinstall org.audacityteam.Audacity]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Audacity.preinstall
 
-# Filelight | Check what's taking up space on your drives~
-RUN echo -e "[Flatpak Preinstall org.kde.filelight]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Filelight.preinstall
-
 # Not Tetris 2 | DEFINITELY not Tetris... 2!!!
 RUN echo -e "[Flatpak Preinstall net.stabyourself.nottetris2]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/NotTetris2.preinstall
 
@@ -272,8 +270,26 @@ RUN mkdir -p /etc/plymouth && \
       wget --tries=5 -O /usr/share/plymouth/themes/spinner/watermark.png \
       https://raw.githubusercontent.com/XeniaMeraki/XeniaOS-G-Euphoria/refs/heads/main/xeniaos_textlogo_plymouth_delphic_melody.png
 
-RUN echo -e "%wheel ALL=(ALL:ALL) ALL" | tee -a /etc/sudoers && \
-    echo -e "Defaults env_reset,pwfeedback" >> /etc/sudoers
+# All kindsa Sudo changes for ease and flavor
+RUN echo -e '%wheel ALL=(ALL:ALL) ALL\n\
+%sudo ALL=(ALL:ALL) ALL\n\
+\n\
+Defaults insults,pwfeedback\n\
+Defaults secure_path=\"/usr/local/bin:/usr/bin:/bin:/home/linuxbrew/.linuxbrew/bin\"\n\
+Defaults env_keep += \"EDITOR VISUAL PATH\"\n\
+Defaults timestamp_type=tty\n\
+Defaults timestamp_timeout=0' > /etc/sudoers.d/xenias-sudo-quiver && \
+    chmod 440 /etc/sudoers.d/xenias-sudo-quiver
+
+# Symlink sudo-rs to sudo, rust-made memory safe~ https://github.com/trifectatechfoundation/sudo-rs#differences-from-original-sudo
+RUN ln -sf /usr/bin/su-rs /usr/bin/su && \
+    ln -sf /usr/bin/sudo-rs /usr/bin/sudo
+
+RUN echo -e '#%PAM-1.0\n\
+auth      include   system-auth\n\
+account   include   system-auth\n\
+password  include   system-auth\n\
+session   include   system-auth' > /etc/pam.d/sudo-rs
 
 # Set up zram, this will help users not run out of memory. Fox will fix!
 RUN echo -e '[zram0]\nzram-size = min(ram, 8192)' >> /usr/lib/systemd/zram-generator.conf
@@ -298,9 +314,6 @@ RUN ln -s ./vim /usr/bin/vi
 # Just to avoid confusion on admin side/make things aesthetic across the board
 RUN ln -s /usr/bin/hyfetch /usr/bin/neofetch && \
     echo -e 'alias fastfetch="hyfetch"' > /etc/profile.d/aliases.sh
-
-# Symlink sudo-rs to sudo, memory safe https://github.com/trifectatechfoundation/sudo-rs#differences-from-original-sudo
-RUN ln -sf su-rs /usr/bin/su && ln -sf sudo-rs /usr/bin/sudo
 
 # Symlink GTK to Libadwaita
 RUN mkdir -p /usr/share/gtk-4.0
@@ -344,19 +357,26 @@ application/x-tar=org.kde.ark.desktop\n\
 # ENV default exports, QT theming 
 # Load shared objects immediately for better first time latency
 # Apply OBS_VK to all vulkan instances for better OBS game capture, some other windows may come along for the ride
+# Auto dark mode everywhere
 ENV QT_QPA_PLATFORMTHEME=qt6ct
 ENV LD_BIND_NOW=1
 ENV OBS_VKCAPTURE=1
+ENV GTK_THEME=Colloid-Orange-Dark-Catppuccin
+ENV GTK2_RC_FILES=/usr/share/themes/Colloid-Orange-Dark-Catppuccin/gtk-2.0/gtkrc
+ENV QT_STYLE_OVERRIDE=Colloid-Orange-Dark-Catppuccin
 
 # Set vm.max_map_count for stability/improved gaming performance
 # https://wiki.archlinux.org/title/Gaming#Increase_vm.max_map_count
 RUN echo -e "vm.max_map_count = 2147483642" > /etc/sysctl.d/80-gamecompatibility.conf
 
+# iwd / Wifi backend setup for networkmanager / Expanded support for more wifi devices
+RUN echo -e '[device]\nwifi.backend=iwd' > /etc/NetworkManager/conf.d/wifi_backend.conf
+
 # Automount ext4/btrfs drives, feel free to mount your own in fstab if you understand how to do so
 # To turn off, run sudo ln -s /dev/null /etc/media-automount.d/_all.conf
 RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator /tmp/media-automount-generator && \
     cd /tmp/media-automount-generator && \
-    DESTDIR=/usr/local ./install_udev.sh && \
+    ./install.sh && \
     rm -rf /tmp/media-automount-generator
 
 ########################################################################################################################################
@@ -511,7 +531,8 @@ RUN systemctl --global enable \
     udiskie.service \
     chezmoi-init.service \
     chezmoi-update.service \
-    chezmoi-update.timer
+    chezmoi-update.timer \
+    opentabletdriver.service
 
 ########################################################################################################################################
 # Section 8 - CachyOS settings | Since we have the CachyOS kernel, we gotta put it to good use ≽^•⩊•^≼ ################################
@@ -539,8 +560,7 @@ RUN mkdir -p /usr/share/icons && \
 # Add Maple Mono font, it's so cute! It's a pain to download! You'll love it.
 RUN mkdir -p "/usr/share/fonts/Maple Mono" && \
     curl --retry 5 --retry-all-errors -fSsLo "/tmp/maple.zip" "$(curl -s https://api.github.com/repos/subframe7536/maple-font/releases/latest | jq -r -c '.assets[] | select(.name == "MapleMono-Variable.zip") | .browser_download_url')" && \
-    unzip -q "/tmp/maple.zip" -d "/usr/share/fonts/Maple Mono" && \
-    fc-cache -f
+    unzip -q "/tmp/maple.zip" -d "/usr/share/fonts/Maple Mono"
 
 # Add config for dolphin to Niri and switch away from GTK/Nautilus, use Dolphin for file chooser.
 RUN echo -e '[preferred] \n\
@@ -604,15 +624,6 @@ label_width = 150' > /etc/greetd/regreet.toml
 # Section 10 - Final Bootc Setup | The horrors are endless. but we stay silly :3c -junoinfernal -maia arson crimew ######################
 ########################################################################################################################################
 
-# Add 3rd party bootc package repo via Hecknt FIXME Eventually remove this with Arch/Chaotic AUR proper host | https://github.com/hecknt/arch-bootc-pkgs
-RUN pacman-key --recv-key 5DE6BF3EBC86402E7A5C5D241FA48C960F9604CB --keyserver keyserver.ubuntu.com
-RUN pacman-key --lsign-key 5DE6BF3EBC86402E7A5C5D241FA48C960F9604CB
-RUN echo -e '[bootc]\nSigLevel = Required\nServer=https://github.com/hecknt/arch-bootc-pkgs/releases/download/$repo' >> /etc/pacman.conf
-
-RUN pacman -Sy --noconfirm
-
-RUN pacman -S --noconfirm bootc/bootc bootc/bootupd bootc/bcvk
-
 RUN printf "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/lib/systemd/system\n" | tee /usr/lib/dracut/dracut.conf.d/30-bootcrew-fix-bootc-module.conf && \
       printf 'hostonly=no\nadd_dracutmodules+=" ostree bootc "' | tee /usr/lib/dracut/dracut.conf.d/30-bootcrew-bootc-modules.conf && \
       sh -c 'export KERNEL_VERSION="$(basename "$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)")" && \
@@ -622,7 +633,7 @@ RUN rm -rf /home/build/.cache/* && \
     rm -rf \
         /tmp/* \
         /var/cache/pacman/pkg/* && \
-    pacman -Rns --noconfirm paru-bin git base-devel make
+    pacman -Rns --noconfirm git paru-bin
 
 # Necessary for general behavior expected by image-based systems
 RUN sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd" && \
