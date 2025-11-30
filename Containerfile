@@ -61,7 +61,7 @@ Target = *\n\
 Description = Cleaning up package cache...\n\
 Depends = coreutils\n\
 When = PostTransaction\n\
-Exec = /usr/bin/rm -rf /var/cache/pacman/pkg" | tee /usr/share/libalpm/hooks/package-cleanup.hook
+Exec = /usr/bin/rm -rf /var/cache/pacman/pkg" > /usr/share/libalpm/hooks/package-cleanup.hook
 
 # Initialize the database
 RUN pacman -Syu --noconfirm
@@ -81,7 +81,7 @@ RUN pacman -S --noconfirm noto-fonts noto-fonts-cjk noto-fonts-emoji unicode-emo
       ttf-ibm-plex ttf-jetbrains-mono-nerd otf-font-awesome ttf-jetbrains-mono wqy-microhei
 
 # CLI Utilities
-RUN pacman -S --noconfirm sudo sudo-rs bash bash-completion fastfetch btop jq less lsof nano openssh powertop man-db wget yt-dlp \
+RUN pacman -S --noconfirm sudo bash bash-completion fastfetch btop jq less lsof nano openssh powertop man-db wget yt-dlp \
       tree usbutils vim wl-clipboard unzip ptyxis glibc-locales tar udev starship tuned-ppd tuned hyfetch curl patchelf
 
 # Virtualization \ Containerization
@@ -272,24 +272,13 @@ RUN mkdir -p /etc/plymouth && \
 
 # All kindsa Sudo changes for ease and flavor
 RUN echo -e '%wheel ALL=(ALL:ALL) ALL\n\
-%sudo ALL=(ALL:ALL) ALL\n\
 \n\
-Defaults insults,pwfeedback\n\
-Defaults secure_path=\"/usr/local/bin:/usr/bin:/bin:/home/linuxbrew/.linuxbrew/bin\"\n\
-Defaults env_keep += \"EDITOR VISUAL PATH\"\n\
-Defaults timestamp_type=tty\n\
+Defaults insults\n\
+Defaults pwfeedback\n\
+Defaults secure_path="/usr/local/bin:/usr/bin:/bin:/home/linuxbrew/.linuxbrew/bin"\n\
+Defaults env_keep += "EDITOR VISUAL PATH"\n\
 Defaults timestamp_timeout=0' > /etc/sudoers.d/xenias-sudo-quiver && \
     chmod 440 /etc/sudoers.d/xenias-sudo-quiver
-
-# Symlink sudo-rs to sudo, rust-made memory safe~ https://github.com/trifectatechfoundation/sudo-rs#differences-from-original-sudo
-RUN ln -sf /usr/bin/su-rs /usr/bin/su && \
-    ln -sf /usr/bin/sudo-rs /usr/bin/sudo
-
-RUN echo -e '#%PAM-1.0\n\
-auth      include   system-auth\n\
-account   include   system-auth\n\
-password  include   system-auth\n\
-session   include   system-auth' > /etc/pam.d/sudo-rs
 
 # Set up zram, this will help users not run out of memory. Fox will fix!
 RUN echo -e '[zram0]\nzram-size = min(ram, 8192)' >> /usr/lib/systemd/zram-generator.conf
@@ -313,7 +302,7 @@ RUN ln -s ./vim /usr/bin/vi
 # Redirect neofetch & fastfetch -> hyfetch | Feel free to undo this as a user 
 # Just to avoid confusion on admin side/make things aesthetic across the board
 RUN ln -s /usr/bin/hyfetch /usr/bin/neofetch && \
-    echo -e 'alias fastfetch="hyfetch"' > /etc/profile.d/aliases.sh
+    echo -e 'alias fastfetch=hyfetch' > /etc/profile.d/aliases.sh
 
 # Symlink GTK to Libadwaita
 RUN mkdir -p /usr/share/gtk-4.0
@@ -438,9 +427,10 @@ WantedBy=multi-user.target' > /usr/lib/systemd/system/flatpak-preinstall.service
 
 # DMS Service Systemd Service
 RUN echo -e '[Unit]\n\
-Description=Shell Service\n\
-PartOf=graphical-session.target\n\
-After=graphical-session.target\n\
+Description=DMS shell for Niri\n\
+After=niri-session.target\n\
+Wants=niri-session.target\n\
+PartOf=niri-session.target\n\
 \n\
 [Service]\n\
 ExecStart=dms run\n\
@@ -448,7 +438,7 @@ Restart=on-failure\n\
 RestartSec=1\n\
 \n\
 [Install]\n\
-WantedBy=graphical-session.target' > /usr/lib/systemd/user/dms.service
+WantedBy=niri-session.target' > /usr/lib/systemd/user/dms.service
 
 RUN echo -e '[Unit]\n\
 Description=udiskie automounter\n\
@@ -526,7 +516,6 @@ RUN systemctl enable polkit.service \
 
 # User services (Niri/user session level)
 RUN systemctl --global enable \
-    niri.service \
     dms.service \
     udiskie.service \
     chezmoi-init.service \
@@ -621,7 +610,7 @@ resolution = "500ms"\n\
 label_width = 150' > /etc/greetd/regreet.toml
 
 ########################################################################################################################################
-# Section 10 - Final Bootc Setup | The horrors are endless. but we stay silly :3c -junoinfernal -maia arson crimew ######################
+# Section 10 - Final Bootc Setup | The horrors are endless. but we stay silly :3c -junoinfernal -maia arson crimew #####################
 ########################################################################################################################################
 
 RUN printf "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/lib/systemd/system\n" | tee /usr/lib/dracut/dracut.conf.d/30-bootcrew-fix-bootc-module.conf && \
