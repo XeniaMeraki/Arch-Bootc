@@ -14,7 +14,7 @@
 #     ][[[[[]]]]]]]]]]]]]]-111111[                  Xenia Meraki the transfem package fox
 #     ]-[[[[[[;]]]]]]]]]]]]]]]]   1                    Programmers @tulilirockz @hecknt
 #     ]][[[[[[[[[[[]]]]]]]]]]]]]                Artists Jasper Valery | Delphic Melody | Chimmie Firefly
-#     1]][[[[[[[[[[[[[[<]]]]]]]]]                            videorelaxant6025
+#     1]][[[[[[[[[[[[[[<]]]]]]]]]                           videorelaxant6025 | @b-
 #      11]]][[[[[[[[[[[[[[[]]]]]]]                         
 #       111]]]]'[[[[[[[[[[[[[[]]]]
 #         111-]]]]][[[[[[[[[[[[[]]  Software that makes this OS possible - Distros/software for inspiration and whose members helped in some way
@@ -47,7 +47,8 @@ ENV DRACUT_NO_XATTR=1
 ########################################################################################################################################
 
 # Move everything from `/var` to `/usr/lib/sysimage` so behavior around pacman remains the same on `bootc usroverlay`'d systems
-RUN grep "= */var" /etc/pacman.conf | sed "/= *\/var/s/.*=// ; s/ //" | xargs -n1 sh -c 'mkdir -p "/usr/lib/sysimage/$(dirname $(echo $1 | sed "s@/var/@@"))" && mv -v "$1" "/usr/lib/sysimage/$(echo "$1" | sed "s@/var/@@")"' '' && \
+RUN grep "= */var" /etc/pacman.conf | sed "/= *\/var/s/.*=// ; s/ //" | xargs -n1 sh -c 'mkdir -p "/usr/lib/sysimage/$(dirname $(echo $1 | sed "s@/var/@@"))" && \
+mv -v "$1" "/usr/lib/sysimage/$(echo "$1" | sed "s@/var/@@")"' '' && \
     sed -i -e "/= *\/var/ s/^#//" -e "s@= */var@= /usr/lib/sysimage@g" -e "/DownloadUser/d" /etc/pacman.conf
 
 # Set it up such that pacman is always cleaned after installs
@@ -63,6 +64,9 @@ Depends = coreutils\n\
 When = PostTransaction\n\
 Exec = /usr/bin/rm -rf /var/cache/pacman/pkg" > /usr/share/libalpm/hooks/package-cleanup.hook
 
+# FIXME | Fix an issue with Cachy's docker, pacman -syu fails otherwise https://discuss.cachyos.org/t/cant-update-because-of-linux-firmware-notice/19835
+RUN mkdir /usr/lib/sysimage/lib/pacmanlocal -p
+
 # Initialize the database
 RUN pacman -Syu --noconfirm
 
@@ -70,30 +74,31 @@ RUN pacman -Syu --noconfirm
 RUN pacman -S --noconfirm reflector
 
 # Base packages \ Linux Foundation \ Foss is love, foss is life! We split up packages by category for readability, debug ease, and less dependency trouble
-RUN pacman -S --noconfirm base dracut linux-cachyos-bore linux-firmware ostree systemd btrfs-progs e2fsprogs xfsprogs binutils dosfstools skopeo dbus dbus-glib glib2 shadow
+RUN pacman -S --noconfirm base linux-firmware dracut linux-cachyos-bore ostree systemd btrfs-progs e2fsprogs xfsprogs binutils dosfstools skopeo dbus dbus-glib glib2 shadow
 
 # Media/Install utilities/Media drivers
 RUN pacman -S --noconfirm librsvg libglvnd qt6-multimedia-ffmpeg plymouth acpid ddcutil dmidecode mesa-utils ntfs-3g \
       vulkan-tools wayland-utils playerctl
 
 # Fonts
-RUN pacman -S --noconfirm noto-fonts noto-fonts-cjk noto-fonts-emoji unicode-emoji noto-fonts-extra ttf-fira-code ttf-firacode-nerd \
-      ttf-ibm-plex ttf-jetbrains-mono-nerd otf-font-awesome ttf-jetbrains-mono wqy-microhei
+RUN pacman -S --noconfirm noto-fonts noto-fonts-cjk noto-fonts-emoji unicode-emoji noto-fonts-extra \
+    ttf-ibm-plex otf-font-awesome ttf-jetbrains-mono wqy-microhei ttf-nerd-fonts-symbols ttf-nerd-fonts-symbols-common \
+    ttf-nerd-fonts-symbols-mono ttf-croscore ttf-dejavu ttf-droid gsfonts ttf-arphic-uming ttf-baekmuk gnu-free-fonts otf-monaspace
 
 # CLI Utilities
 RUN pacman -S --noconfirm sudo bash bash-completion fastfetch btop jq less lsof nano openssh powertop man-db wget yt-dlp \
-      tree usbutils vim wl-clipboard unzip ptyxis glibc-locales tar udev starship tuned-ppd tuned hyfetch curl patchelf
+      tree usbutils vim wl-clip-persist cliphist unzip ptyxis glibc-locales tar udev starship tuned-ppd tuned hyfetch curl patchelf 
 
 # Virtualization \ Containerization
 RUN pacman -S --noconfirm distrobox docker podman
 
 # Drivers \ "Business, business, business! Numbersss."
 RUN pacman -S --noconfirm amd-ucode intel-ucode efibootmgr shim mesa lib32-mesa libva-intel-driver libva-mesa-driver \
-      vpl-gpu-rt vulkan-icd-loader vulkan-intel vulkan-radeon apparmor xf86-video-amdgpu lib32-vulkan-radeon 
+    vpl-gpu-rt vulkan-icd-loader vulkan-intel vulkan-radeon apparmor xf86-video-amdgpu lib32-vulkan-radeon zram-generator \
+    lm_sensors
 
 # Network / VPN / SMB / storage
-RUN pacman -S --noconfirm libmtp networkmanager-openconnect networkmanager-openvpn nss-mdns samba smbclient networkmanager firewalld udiskie \
-      udisks2 iwd
+RUN pacman -S --noconfirm libmtp nss-mdns samba smbclient networkmanager firewalld udiskie udisks2
 
 # Accessibility
 RUN pacman -S --noconfirm espeak-ng orca
@@ -107,8 +112,8 @@ RUN pacman -S --noconfirm cups cups-browsed hplip
 
 # Desktop Environment needs
 RUN pacman -S --noconfirm greetd xwayland-satellite xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gnome \
-      ffmpegthumbs kdegraphics-thumbnailers kdenetwork-filesharing kio-admin chezmoi matugen accountsservice quickshell dgop cliphist cava dolphin \ 
-      breeze brightnessctl wlsunset ddcutil xdg-utils kservice5 archlinux-xdg-menu shared-mime-info kio glycin greetd-regreet gnome-themes-extra
+      ffmpegthumbs kdegraphics-thumbnailers kdenetwork-filesharing kio-admin chezmoi matugen accountsservice quickshell dgop cava dolphin \ 
+      breeze brightnessctl ddcutil xdg-utils kservice5 archlinux-xdg-menu shared-mime-info kio glycin greetd-regreet gnome-themes-extra
 
 # User frontend programs/apps
 RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-utility mangohud lib32-mangohud
@@ -117,74 +122,43 @@ RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-util
 # Section 2 - Package List | For my info and yours too! No secrets here. | Enjoy your life, and love everyone around you as much as possible ########
 #######################################################################################################################################################
 
-# -Package list- Chaotic-AUR and AUR
-# niri-git | input-remapper-git | vesktop | sc-controller | flatpak-git | dms-shell-git | ttf-twemoji |
-# ttf-symbola | opentabletdriver | colloid-catppuccin-gtk-theme-git | colloid-catppuccin-theme-git
-# OBS | OBSvk | Bootc | uupd | 
+# -Package list- Chaotic-AUR precompiled packages
+# niri-git | vesktop | flatpak-git | dms-shell-git |
+# opentabletdriver | bootc | OBS
 
 # Arch apps
 # Dolphin | Chezmoi | Gnome-Disks | Docker | Podman | SCX Manager | Steam | Mangohud
 
 # Flatpaks
-# Bazaar | Krita | Elisa | Pinta | Ark | Cave Story | Faugus Launcher | ProtonUp-QT | Kdenlive |
-# Okular | Kate | Warehouse | Fedora Media Writer | Gear Lever | Haruna | Space Cadet Pinball | Gwenview
-# Audacity | Not Tetris 2 | Floorp
+# Bazaar | Firefox | Krita | Elisa | Pinta | OBS | Ark | Faugus Launcher | ProtonPlus | Kdenlive |
+# Okular | Kate | Warehouse | Fedora Media Writer | Gear Lever | Haruna | Gwenview
+# Audacity | Not Tetris 2 | Resources
 
 ##############################################################################################################################################
 # Section 3 - Chaotic AUR / AUR # We grab some precompiled packages from the Chaotic AUR for things not on Arch repos/better updated~ ovo ####
 ##############################################################################################################################################
 
+# Chaotic AUR repo
 RUN pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
-
 RUN pacman-key --init && pacman-key --lsign-key 3056513887B78AEB
-
 RUN pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' --noconfirm
-
 RUN pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
-
 RUN echo -e '[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist' >> /etc/pacman.conf
+# Heck's Bootc repo
+RUN pacman-key --recv-key 5DE6BF3EBC86402E7A5C5D241FA48C960F9604CB --keyserver keyserver.ubuntu.com
+RUN pacman-key --lsign-key 5DE6BF3EBC86402E7A5C5D241FA48C960F9604CB
+RUN echo -e '[bootc]\nSigLevel = Required\nServer=https://github.com/hecknt/arch-bootc-pkgs/releases/download/$repo' >> /etc/pacman.conf
 
 RUN pacman -Sy --noconfirm
 
 RUN pacman -S --noconfirm \
-    chaotic-aur/niri-git chaotic-aur/input-remapper-git chaotic-aur/sc-controller chaotic-aur/flatpak-git \
-    chaotic-aur/dms-shell-git chaotic-aur/ttf-twemoji chaotic-aur/ttf-symbola chaotic-aur/opentabletdriver chaotic-aur/qt6ct-kde \
-    chaotic-aur/colloid-catppuccin-gtk-theme-git chaotic-aur/colloid-catppuccin-theme-git chaotic-aur/adwaita-qt5-git \
-    chaotic-aur/adwaita-qt6-git chaotic-aur/bootc chaotic-aur/obs-studio-stable chaotic-aur/obs-vkcapture-git
+    chaotic-aur/niri-git chaotic-aur/flatpak-git chaotic-aur/obs-studio-stable chaotic-aur/obs-vkcapture-git \
+    chaotic-aur/dms-shell-git chaotic-aur/ttf-symbola chaotic-aur/opentabletdriver chaotic-aur/qt6ct-kde \
+    chaotic-aur/adwaita-qt5-git chaotic-aur/adwaita-qt6-git chaotic-aur/bootc chaotic-aur/ttf-twemoji chaotic-aur/vesktop
 
-# Regular AUR Build Section
-# Create build user
-RUN useradd -m --shell=/bin/bash build && usermod -L build && \
-    echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
-    echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-# Install AUR packages
-USER build
-WORKDIR /home/build
-RUN --mount=type=tmpfs,dst=/tmp \
-    git clone https://aur.archlinux.org/paru-bin.git --single-branch /tmp/paru && \
-    cd /tmp/paru && \
-    makepkg -si --noconfirm && \
-    cd .. && \
-    rm -drf paru-bin
-
-# AUR packages
-RUN paru -S --noconfirm \
-        aur/uupd aur/gnome-themes-extra-gtk2 aur/vesktop-bin
-
-USER root
-WORKDIR /
-# Cleanup and delete build user
-RUN userdel -r build && \
-    rm -drf /home/build && \
-    sed -i '/build ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
-    sed -i '/root ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers && \
-    rm -rf /home/build && \
-    rm -rf \
-        /tmp/* \
-        /var/cache/pacman/pkg/*
-
-#AUR script credit @KyleGospo @cyrv6737
+RUN pacman -S --noconfirm \
+  bootc/uupd && \
+  systemctl enable uupd.timer
 
 #######################################################################################################################################################
 # Section 4 - Flatpaks preinstalls | Don't forget. Always, somewhere, someone is fighting for you. You are not alone. -Madoka Magica ##################
@@ -207,14 +181,11 @@ RUN echo -e "[Flatpak Preinstall com.github.PintaProject.Pinta]\nBranch=stable\n
 # Ark | For unzipping files and file compression! (Imagine a fox whose face you may squish...)
 RUN echo -e "[Flatpak Preinstall org.kde.ark]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Ark.preinstall
 
-# Cave Story, a free, public domain platformer! It's historically important to videogames and platformers as a genre.
-RUN echo -e "[Flatpak Preinstall com.gitlab.coringao.cavestory-nx]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/CaveStory.preinstall
-
 # Faugus Launcher | This is fantastic for using windows software on linux, throwing exes at it and whatnot
 RUN echo -e "[Flatpak Preinstall io.github.faugus.faugus-launcher]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/FaugusLauncher.preinstall
 
-# ProtonUp-Qt | For installing different versions of proton! Emulation for windows games via Steam/Valve's work
-RUN echo -e "[Flatpak Preinstall net.davidotek.pupgui2]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/ProtonUp-Qt.preinstall
+# ProtonPlus | For installing different versions of proton! Emulation for windows games via Steam/Valve's work
+RUN echo -e "[Flatpak Preinstall com.vysp3r.ProtonPlus]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/ProtonPlus.preinstall
 
 # Kdenlive | Video editing!
 RUN echo -e "[Flatpak Preinstall org.kde.kdenlive]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Kdenlive.preinstall
@@ -237,9 +208,6 @@ RUN echo -e "[Flatpak Preinstall it.mijorus.gearlever]\nBranch=stable\nIsRuntime
 # Haruna | Watch video files! I actually personally like this better than VLC Media Player, nicer look/featureset
 RUN echo -e "[Flatpak Preinstall org.kde.haruna]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Haruna.preinstall
 
-# Pinball | It's important. Shakes you. I need you to understand I NEED this and need to put this on your computer.
-RUN echo -e "[Flatpak Preinstall com.github.k4zmu2a.spacecadetpinball]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Pinball.preinstall
-
 # Gwenview | View images!
 RUN echo -e "[Flatpak Preinstall org.kde.gwenview]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Gwenview.preinstall
 
@@ -249,11 +217,11 @@ RUN echo -e "[Flatpak Preinstall org.audacityteam.Audacity]\nBranch=stable\nIsRu
 # Not Tetris 2 | DEFINITELY not Tetris... 2!!!
 RUN echo -e "[Flatpak Preinstall net.stabyourself.nottetris2]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/NotTetris2.preinstall
 
-# Floorp | A very nicely fast and very nicely featured Firefox fork! A fellow fox!!
-RUN echo -e "[Flatpak Preinstall one.ablaze.floorp]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Floorp.preinstall
+# Firefox | A fellow fluffy fox!!
+RUN echo -e "[Flatpak Preinstall org.mozilla.firefox]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Firefox.preinstall
 
-# Rclone Shuttle | Files storage and transfer, at your service, my quing!
-RUN echo -e "[Flatpak Preinstall io.github.pieterdd.RcloneShuttle]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/RcloneShuttle.preinstall
+# System Monitor/System Processes Manager
+RUN echo -e "[Flatpak Preinstall flathub net.nokyan.Resources]\nBranch=stable\nRuntime=false" > /usr/share/flatpak/preinstall.d/SystemMonitor.preinstall
 
 ########################################################################################################################################
 # Section 5 - Linux OS stuffs | "I'd decide for myself whether his teachings are right or wrong." Near, Death Note #####################
@@ -275,10 +243,33 @@ Defaults env_keep += "EDITOR VISUAL PATH"\n\
 Defaults timestamp_timeout=0' > /etc/sudoers.d/xenias-sudo-quiver && \
     chmod 440 /etc/sudoers.d/xenias-sudo-quiver
 
+RUN git clone --depth=1 https://github.com/vinceliuice/Colloid-icon-theme /tmp/colloid-icons && \
+    cd /tmp/colloid-icons && \
+    ./install.sh \
+      -s catppuccin \
+      -t orange \
+      -d /usr/share/icons && \
+    rm -rf /tmp/colloid-icons
+
+RUN git clone --depth=1 https://github.com/Hexality/Colloidppuccin /tmp/colloid-gtk && \
+    cd /tmp/colloid-gtk && \
+    ./install.sh \
+      -t orange \
+      -c dark \
+      -n Colloid-Orange-Dark-Catppuccin \
+      -d /usr/share/themes && \
+    rm -rf /tmp/colloid-gtk
+
+# Add greetd user manually for rebase issues that arise
+RUN useradd -M -G video,input -s /usr/bin/nologin greeter || true
+
+# Refresh icon cache
+RUN gtk-update-icon-cache -f /usr/share/icons/Colloid-Orange-Catppuccin-Dark || true
+
 # Set up zram, this will help users not run out of memory. Fox will fix!
-RUN echo -e '[zram0]\nzram-size = min(ram, 8192)' >> /usr/lib/systemd/zram-generator.conf
-RUN echo -e 'enable systemd-resolved.service' >> usr/lib/systemd/system-preset/91-resolved-default.preset
-RUN echo -e 'L /etc/resolv.conf - - - - ../run/systemd/resolve/stub-resolv.conf' >> /usr/lib/tmpfiles.d/resolved-default.conf
+RUN echo -e '[zram0]\nzram-size = min(ram, 8192)' > /usr/lib/systemd/zram-generator.conf
+RUN echo -e 'enable systemd-resolved.service' > /usr/lib/systemd/system-preset/91-resolved-default.preset
+RUN echo -e 'L /etc/resolv.conf - - - - ../run/systemd/resolve/stub-resolv.conf' > /usr/lib/tmpfiles.d/resolved-default.conf
 RUN systemctl preset systemd-resolved.service
 
 # OS Release and Update uwu
@@ -297,7 +288,7 @@ RUN ln -s ./vim /usr/bin/vi
 # Redirect neofetch & fastfetch -> hyfetch | Feel free to undo this as a user 
 # Just to avoid confusion on admin side/make things aesthetic across the board
 RUN ln -s /usr/bin/hyfetch /usr/bin/neofetch && \
-    echo -e 'alias fastfetch="hyfetch"' > /etc/profile.d/aliases.sh
+    echo -e 'alias fastfetch=hyfetch' > /etc/profile.d/aliases.sh
 
 # Symlink GTK to Libadwaita
 RUN mkdir -p /usr/share/gtk-4.0
@@ -316,7 +307,7 @@ RUN echo -e '[Default Applications]\n\
 text/plain=org.kde.kate.desktop\n\
 application/json=org.kde.kate.desktop\n\
 \n\
-text/html=floorp.desktop\n\
+text/html=firefox.desktop\n\
 \n\
 video/mp4=haruna.desktop\n\
 video/x-matroska=haruna.desktop\n\
@@ -342,19 +333,21 @@ application/x-tar=org.kde.ark.desktop\n\
 # Load shared objects immediately for better first time latency
 # Apply OBS_VK to all vulkan instances for better OBS game capture, some other windows may come along for the ride
 # Auto dark mode everywhere
-ENV QT_QPA_PLATFORMTHEME=qt6ct
-ENV LD_BIND_NOW=1
-ENV OBS_VKCAPTURE=1
-ENV GTK_THEME=Colloid-Orange-Dark-Catppuccin
-ENV GTK2_RC_FILES=/usr/share/themes/Colloid-Orange-Dark-Catppuccin/gtk-2.0/gtkrc
-ENV QT_STYLE_OVERRIDE=Colloid-Orange-Dark-Catppuccin
+RUN echo -e 'QT_QPA_PLATFORMTHEME=qt6ct\n\
+LD_BIND_NOW=1\n\
+OBS_VKCAPTURE=1\n\
+GTK_THEME=Colloid-Orange-Dark-Catppuccin\n\
+QT_STYLE_OVERRIDE=Colloid-Orange-Dark-Catppuccin\n\
+XDG_MENU_PREFIX=arch-\n\
+XDG_MENU_PREFIX=plasma-' > /etc/environment
+
+RUN kbuildsycoca6
+
+ENV NIRI_CONFIG=/usr/share/xeniaos/niri/config.kdl
 
 # Set vm.max_map_count for stability/improved gaming performance
 # https://wiki.archlinux.org/title/Gaming#Increase_vm.max_map_count
 RUN echo -e "vm.max_map_count = 2147483642" > /etc/sysctl.d/80-gamecompatibility.conf
-
-# iwd / Wifi backend setup for networkmanager / Expanded support for more wifi devices
-RUN echo -e '[device]\nwifi.backend=iwd' > /etc/NetworkManager/conf.d/wifi_backend.conf
 
 # Automount ext4/btrfs drives, feel free to mount your own in fstab if you understand how to do so
 # To turn off, run sudo ln -s /dev/null /etc/media-automount.d/_all.conf
@@ -367,7 +360,7 @@ RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator /tm
 # Section 6 - Set up brew | terminal packages manager utility | https://brew.sh/ | Foxy witch will mix up a brew for you! ##############
 ########################################################################################################################################
 
-RUN curl -s https://api.github.com/repos/ublue-os/packages/releases/latest \
+RUN curl -s --variable '%AUTH_HEADER' --expand-header '{{AUTH_HEADER}}' https://api.github.com/repos/ublue-os/packages/releases/latest \
     | jq -r '.assets[] | select(.name | test("homebrew-x86_64.*\\.tar\\.zst")) | .browser_download_url' \
     | xargs -I {} wget -O /usr/share/homebrew.tar.zst {}
 
@@ -430,6 +423,15 @@ ExecStart=/usr/bin/udiskie\n\
 WantedBy=default.target' > /usr/lib/systemd/user/udiskie.service
 
 RUN echo -e '[Unit]\n\
+Description=Persistent wayland clipboard\n\
+\n\
+[Service]\n\
+ExecStart=/usr/bin/wl-clip-persist --clipboard regular\n\
+\n\
+[Install]\n\
+WantedBy=default.target' > /usr/lib/systemd/user/wl-clip-persist.service
+
+RUN echo -e '[Unit]\n\
 Description=Initializes Chezmoi if directory is missing\n\
 ConditionPathExists=!%h/.config/xeniaos/chezmoi\n\
 \n\
@@ -440,7 +442,7 @@ ExecStart=chezmoi apply -S /usr/share/xeniaos/zdots --config %h/.config/xeniaos/
 Type=oneshot\n\
 \n\
 [Install]\n\
-WantedBy=default.target' >> /usr/lib/systemd/user/chezmoi-init.service
+WantedBy=graphical-session-pre.target' >> /usr/lib/systemd/user/chezmoi-init.service
 
 RUN echo -e '[Unit]\n\
 Description=Timer for Chezmoi Update\n\
@@ -492,7 +494,8 @@ RUN systemctl enable polkit.service \
     greetd.service \
     flatpak-preinstall.service \
     xeniaos-group-fix.service \
-    uupd.timer
+    cups.socket \
+    cups-browsed.service
 
 # User services (Niri/user session level)
 RUN systemctl --global enable \
@@ -502,7 +505,8 @@ RUN systemctl --global enable \
     chezmoi-init.service \
     chezmoi-update.service \
     chezmoi-update.timer \
-    opentabletdriver.service
+    opentabletdriver.service \
+    wl-clip-persist.service
 
 ########################################################################################################################################
 # Section 8 - CachyOS settings | Since we have the CachyOS kernel, we gotta put it to good use ≽^•⩊•^≼ ################################
@@ -521,16 +525,20 @@ net.ipv4.tcp_congestion_control=bbr' > /etc/sysctl.d/99-bbr3.conf
 
 # Catppuccin style cursor, in a lovely orange, much like my furrrrr~
 RUN mkdir -p /usr/share/icons && \
-    curl -fsSLO https://github.com/catppuccin/cursors/releases/download/v2.0.0/catppuccin-mocha-peach-cursors.zip && \
+    curl --retry 5 --retry-all-errors -fsSLO \
+      https://github.com/catppuccin/cursors/releases/download/v2.0.0/catppuccin-mocha-peach-cursors.zip && \
     unzip -q catppuccin-mocha-peach-cursors.zip -d /usr/share/icons && \
-    rm catppuccin-mocha-peach-cursors.zip && \
-    rm -rf /usr/share/icons/default && \
-    ln -s /usr/share/icons/Catppuccin-Mocha-Peach-Cursors /usr/share/icons/default
+    rm -f catppuccin-mocha-peach-cursors.zip && \
+    ln -sfn /usr/share/icons/Catppuccin-Mocha-Peach-Cursors /usr/share/icons/default
 
 # Add Maple Mono font, it's so cute! It's a pain to download! You'll love it.
 RUN mkdir -p "/usr/share/fonts/Maple Mono" && \
-    curl --retry 5 --retry-all-errors -fSsLo "/tmp/maple.zip" "$(curl -s https://api.github.com/repos/subframe7536/maple-font/releases/latest | jq -r -c '.assets[] | select(.name == "MapleMono-Variable.zip") | .browser_download_url')" && \
-    unzip -q "/tmp/maple.zip" -d "/usr/share/fonts/Maple Mono"
+    curl --retry 5 --retry-all-errors -fsSL \
+      https://github.com/subframe7536/maple-font/releases/download/v7.9/MapleMono-Variable.zip \
+      -o /tmp/maple.zip && \
+    unzip -q /tmp/maple.zip -d "/usr/share/fonts/Maple Mono" && \
+    rm -f /tmp/maple.zip && \
+    fc-cache -f || true
 
 # Add config for dolphin to Niri and switch away from GTK/Nautilus, use Dolphin for file chooser.
 RUN echo -e '[preferred] \n\
@@ -543,7 +551,7 @@ org.freedesktop.impl.portal.Notification=kde;gtk;gnome' > /usr/share/xdg-desktop
 RUN echo -e 'eval "$(starship init bash)"' >> /etc/bash.bashrc
 
 # ReGreet login shell setup
-RUN mkdir -p /etc/greetd/
+RUN mkdir -p /etc/greetd/xeniaos/
 
 RUN echo -e 'spawn-sh-at-startup "regreet >/dev/null 2>&1; niri msg action quit --skip-confirmation"\n\
 hotkey-overlay {\n\
@@ -551,14 +559,14 @@ hotkey-overlay {\n\
 }\n\
 cursor {\n\
     xcursor-theme "catppuccin-mocha-peach-cursors"\n\
-}' > /etc/greetd/niri.kdl
+}' > /etc/greetd/xeniaos/niri.kdl
 
 RUN echo -e '[terminal]\n\
 vt = 1\n\
 \n\
 [default_session]\n\
-command = "/usr/bin/dbus-run-session /usr/bin/niri --config /etc/greetd/niri.kdl >/dev/null 2>&1"\n\
-user = "greeter"' > /etc/greetd/config.toml
+command = "/usr/bin/dbus-run-session /usr/bin/niri --config /etc/greetd/xeniaos/niri.kdl >/dev/null 2>&1"\n\
+user = "greeter"' > /etc/greetd/xeniaos/config.toml
 
 RUN echo -e '[background]\n\
 path = "/usr/share/xeniaos/wallpapers/3_hypno_chimmie_firefly_videorelaxant6025.png"\n\
@@ -588,7 +596,7 @@ format = "%a %H:%M"\n\
 \n\
 resolution = "500ms"\n\
 \n\
-label_width = 150' > /etc/greetd/regreet.toml
+label_width = 150' > /etc/greetd/xeniaos/regreet.toml
 
 ########################################################################################################################################
 # Section 10 - Final Bootc Setup | The horrors are endless. but we stay silly :3c -junoinfernal -maia arson crimew #####################
@@ -603,7 +611,7 @@ RUN rm -rf /home/build/.cache/* && \
     rm -rf \
         /tmp/* \
         /var/cache/pacman/pkg/* && \
-    pacman -Rns --noconfirm git paru-bin
+    pacman -Rns --noconfirm git
 
 # Necessary for general behavior expected by image-based systems
 RUN sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd" && \
@@ -616,22 +624,22 @@ RUN sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd" && \
 
 RUN bootc container lint
 
-#####################                                                       ✧⋆✩₊⋆⁺₊˚.
-#####################     ,c.                       .c;                    ✩₊˚.⋆☾⋆⁺₊✧
-#####################   .KMMMk....             ....kMMMK.                  ₊˚.⋆⁺₊✧⋆✩
+#####################
+#####################     ,c.                       .c;
+#####################   .KMMMk....             ....kMMMK.
 #####################   .WMMMMMX.....         .....KMMMMMW.                       
 #####################   XMMMMMMM0.....        ....OMMMMMMMN
-#####################  dMMMMMMMMM;.... ..... ....,MMMMMMMMMd          Who's gonna take you home tonight?
-#####################  WMMMMMMMMMl;okKKKKKKKKKOo;cMMMMMMMMMM        Does God bless your transsexual heart,
-##################### 'MMMMMMMNXK0KKKKKKKKKKKKKKK0KXNMMMMMMM;             True Trans Soul Rebel?
-##################### oMMMMMMMOxoKKKKKKKKKKKKKKKKKoxOMMMMMMMd
-##################### dMMMMMMMdxxxKKKKKKKKKKKKKKKxxxdNMMMMMMk
-##################### :MMMMX0xxxxxx0KKKKKKKK0KK0xxxxxx0XMMMMc         Well, you should've been a mother
-#####################  MMMOxxxxxxxxdxkdd0x0ddkxdxxxxxxxxOMMM              You should've been a wife
-##################### ;xxkxddxxxxdodxxxxdxdxxxxdodxxxxddxkxx;       You should've been gone from here years ago
-#####################dxdKMMMWXo'.....'cdxxxdc'.....'lXWMMMXdxd        You should be living a different life
+#####################  dMMMMMMMMM;.... ..... ....,MMMMMMMMMd
+#####################  WMMMMMMMMMl;okKKKKKKKKKOo;cMMMMMMMMMM
+##################### 'MMMMMMMNXK0KKKKKKKKKKKKKKK0KXNMMMMMMM;
+##################### oMMMMMMMOxoKKKKKKKKKKKKKKKKKoxOMMMMMMMd                    
+##################### dMMMMMMMdxxxKKKKKKKKKKKKKKKxxxdNMMMMMMk                  
+##################### :MMMMX0xxxxxx0KKKKKKKK0KK0xxxxxx0XMMMMc
+#####################  MMMOxxxxxxxxdxkdd0x0ddkxdxxxxxxxxOMMM 
+##################### ;xxkxddxxxxdodxxxxdxdxxxxdodxxxxddxkxx;
+#####################dxdKMMMWXo'.....'cdxxxdc'.....'lXWMMMXdxd
 ##################### cxdXMMMN,..........dxd'.........'XMMMNdxl 
-#####################  .xxWMMl...''....'.;k:.'....''...lMMWxx.                 - Against Me!
+#####################  .xxWMMl...''....'.;k:.'....''...lMMWxx.       
 ##################### ..:kXMMx..'....''..kMk..''....'..xMMXkc..
 #####################  dMMMMMMd.....'...xMMMx...''....dMMMMMMx
 #####################    kMMMMWOoc:coOkolllokOoc:coOWMMMMO
