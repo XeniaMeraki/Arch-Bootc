@@ -111,9 +111,9 @@ RUN pacman -S --noconfirm pipewire pipewire-pulse pipewire-zeroconf pipewire-ffa
 RUN pacman -S --noconfirm cups cups-browsed hplip
 
 # Desktop Environment needs
-RUN pacman -S --noconfirm greetd xwayland-satellite xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gnome \
-      ffmpegthumbs kdegraphics-thumbnailers kdenetwork-filesharing kio-admin chezmoi matugen accountsservice quickshell dgop cava dolphin \ 
-      breeze brightnessctl ddcutil xdg-utils kservice5 archlinux-xdg-menu shared-mime-info kio glycin greetd-regreet gnome-themes-extra
+RUN pacman -S --noconfirm xwayland-satellite xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gnome \
+      ffmpegthumbs kdegraphics-thumbnailers kdenetwork-filesharing kio-admin chezmoi matugen accountsservice dgop cava dolphin \ 
+      breeze brightnessctl ddcutil xdg-utils kservice5 archlinux-xdg-menu shared-mime-info kio glycin gnome-themes-extra
 
 # User frontend programs/apps
 RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-utility mangohud lib32-mangohud
@@ -260,9 +260,6 @@ RUN git clone --depth=1 https://github.com/Hexality/Colloidppuccin /tmp/colloid-
       -d /usr/share/themes && \
     rm -rf /tmp/colloid-gtk
 
-# Add greetd user manually for rebase issues that arise
-RUN useradd -M -G video,input -s /usr/bin/nologin greeter || true
-
 # Refresh icon cache
 RUN gtk-update-icon-cache -f /usr/share/icons/Colloid-Orange-Catppuccin-Dark || true
 
@@ -342,8 +339,6 @@ XDG_MENU_PREFIX=arch-\n\
 XDG_MENU_PREFIX=plasma-' > /etc/environment
 
 RUN kbuildsycoca6
-
-ENV NIRI_CONFIG=/usr/share/xeniaos/niri/config.kdl
 
 # Set vm.max_map_count for stability/improved gaming performance
 # https://wiki.archlinux.org/title/Gaming#Increase_vm.max_map_count
@@ -550,53 +545,33 @@ org.freedesktop.impl.portal.Notification=kde;gtk;gnome' > /usr/share/xdg-desktop
 #Starship setup
 RUN echo -e 'eval "$(starship init bash)"' >> /etc/bash.bashrc
 
-# ReGreet login shell setup
-RUN mkdir -p /etc/greetd/xeniaos/
+RUN pacman -S --noconfirm greetd quickshell
 
-RUN echo -e 'spawn-sh-at-startup "regreet >/dev/null 2>&1; niri msg action quit --skip-confirmation"\n\
-hotkey-overlay {\n\
+ENV NIRI_CONFIG=$XDG_CONFIG_HOME/niri/xeniaos/config.kdl
+
+RUN mkdir -p /etc/xdg/quickshell && \
+    git clone https://github.com/AvengeMedia/DankMaterialShell.git /etc/xdg/quickshell/dms-greeter && \
+    mkdir /var/cache/dms-greeter && \
+    chown greeter:greeter /var/cache/dms-greeter && \
+    dms greeter enable && \
+    dms greeter sync
+
+RUN echo -e 'hotkey-overlay {\n\
     skip-at-startup\n\
 }\n\
-cursor {\n\
-    xcursor-theme "catppuccin-mocha-peach-cursors"\n\
-}' > /etc/greetd/xeniaos/niri.kdl
-
-RUN echo -e '[terminal]\n\
-vt = 1\n\
 \n\
-[default_session]\n\
-command = "/usr/bin/dbus-run-session /usr/bin/niri --config /etc/greetd/xeniaos/niri.kdl >/dev/null 2>&1"\n\
-user = "greeter"' > /etc/greetd/xeniaos/config.toml
-
-RUN echo -e '[background]\n\
-path = "/usr/share/xeniaos/wallpapers/3_hypno_chimmie_firefly_videorelaxant6025.png"\n\
+environment {\n\
+    DMS_RUN_GREETER "1"\n\
+}\n\
 \n\
-fit = "Fill"\n\
-[GTK]\n\
-application_prefer_dark_theme = true\n\
+gestures {\n\
+  hot-corners {\n\
+    off\n\
+  }\n\
+}\n\
 \n\
-cursor_theme_name = "catppuccin-mocha-peach-cursors"\n\
-\n\
-cursor_blink = true\n\
-\n\
-font_name = "Maple Mono 16"\n\
-\n\
-icon_theme_name = "Colloid-Orange-Catppuccin-Dark"\n\
-\n\
-theme_name = "Colloid-Orange-Dark-Catppuccin"\n\
-[commands]\n\
-reboot = ["systemctl", "reboot"]\n\
-\n\
-poweroff = ["systemctl", "poweroff"]\n\
-[appearance]\n\
-greeting_msg = "Welcome to the fox den!~"\n\
-\n\
-[widget.clock]\n\
-format = "%a %H:%M"\n\
-\n\
-resolution = "500ms"\n\
-\n\
-label_width = 150' > /etc/greetd/xeniaos/regreet.toml
+layout {\n\
+  background-color "#000000"' > /etc/greetd/niri.kdl
 
 ########################################################################################################################################
 # Section 10 - Final Bootc Setup | The horrors are endless. but we stay silly :3c -junoinfernal -maia arson crimew #####################
