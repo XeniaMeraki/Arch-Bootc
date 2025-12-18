@@ -486,7 +486,6 @@ RUN systemctl enable polkit.service \
     tuned.service \
     tuned-ppd.service \
     firewalld.service \
-    greetd.service \
     flatpak-preinstall.service \
     xeniaos-group-fix.service \
     cups.socket \
