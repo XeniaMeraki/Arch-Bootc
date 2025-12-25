@@ -27,7 +27,7 @@
 #                       `            Credit art: Cathodegaytube for original art, @catumin for ascii-ification
 
 FROM docker.io/cachyos/cachyos-v3:latest AS final
-
+COPY --from=ghcr.io/ublue-os/brew:latest /system_files /
 ENV DRACUT_NO_XATTR=1
 
 # ✩₊˚.⋆☾𓃦☽⋆⁺₊✧ Index
@@ -36,11 +36,10 @@ ENV DRACUT_NO_XATTR=1
 # Section 3 - Chaotic AUR / AUR
 # Section 4 - Flatpaks preinstalls
 # Section 5 - Linux OS Stuffs
-# Section 6 - Set up Brew
-# Section 7 - Systemd n Services
-# Section 8 - CachyOS Settings
-# Section 9 - Niri/Chezmoi/DMS
-# Section 10 - Final Bootc Setup
+# Section 6 - Systemd n Services
+# Section 7 - CachyOS Settings
+# Section 8 - Niri/Chezmoi/DMS
+# Section 9 - Final Bootc Setup
 
 ########################################################################################################################################
 # Section 1 - Package Installs | We grab every package we can from official arch repo/set up all non-flatpak apps for user ^^ ##########
@@ -64,9 +63,6 @@ Depends = coreutils\n\
 When = PostTransaction\n\
 Exec = /usr/bin/rm -rf /var/cache/pacman/pkg" > /usr/share/libalpm/hooks/package-cleanup.hook
 
-# FIXME | Fix an issue with Cachy's docker, pacman -syu fails otherwise https://discuss.cachyos.org/t/cant-update-because-of-linux-firmware-notice/19835
-RUN mkdir /usr/lib/sysimage/lib/pacmanlocal -p
-
 # Initialize the database
 RUN pacman -Syu --noconfirm
 
@@ -78,12 +74,13 @@ RUN pacman -S --noconfirm base linux-firmware dracut linux-cachyos-bore ostree s
 
 # Media/Install utilities/Media drivers
 RUN pacman -S --noconfirm librsvg libglvnd qt6-multimedia-ffmpeg plymouth acpid ddcutil dmidecode mesa-utils ntfs-3g \
-      vulkan-tools wayland-utils playerctl
+      vulkan-tools wayland-utils playerctl rsync
 
 # Fonts
-RUN pacman -S --noconfirm noto-fonts noto-fonts-cjk noto-fonts-emoji unicode-emoji noto-fonts-extra \
-    ttf-ibm-plex otf-font-awesome ttf-jetbrains-mono wqy-microhei ttf-nerd-fonts-symbols ttf-nerd-fonts-symbols-common \
-    ttf-nerd-fonts-symbols-mono ttf-croscore ttf-dejavu ttf-droid gsfonts ttf-arphic-uming ttf-baekmuk gnu-free-fonts otf-monaspace
+RUN pacman -S --noconfirm noto-fonts noto-fonts-extra noto-fonts-cjk noto-fonts-emoji unicode-emoji
+
+# recreate font-cache to pick up the added fonts
+RUN fc-cache --force --really-force --system-only --verbose
 
 # CLI Utilities
 RUN pacman -S --noconfirm sudo bash bash-completion fastfetch btop jq less lsof nano openssh powertop man-db wget yt-dlp \
@@ -111,9 +108,9 @@ RUN pacman -S --noconfirm pipewire pipewire-pulse pipewire-zeroconf pipewire-ffa
 RUN pacman -S --noconfirm cups cups-browsed hplip
 
 # Desktop Environment needs
-RUN pacman -S --noconfirm xwayland-satellite xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gnome \
-      ffmpegthumbs kdegraphics-thumbnailers kdenetwork-filesharing kio-admin chezmoi matugen accountsservice dgop cava dolphin \ 
-      breeze brightnessctl ddcutil xdg-utils kservice5 archlinux-xdg-menu shared-mime-info kio glycin gnome-themes-extra
+RUN pacman -S --noconfirm greetd xwayland-satellite xdg-desktop-portal-kde xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gnome \
+      ffmpegthumbs kdegraphics-thumbnailers kdenetwork-filesharing kio-admin chezmoi matugen accountsservice quickshell dgop cava dolphin \ 
+      breeze brightnessctl ddcutil xdg-utils kservice5 archlinux-xdg-menu shared-mime-info kio glycin greetd-regreet gnome-themes-extra
 
 # User frontend programs/apps
 RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-utility mangohud lib32-mangohud
@@ -123,8 +120,7 @@ RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-util
 #######################################################################################################################################################
 
 # -Package list- Chaotic-AUR precompiled packages
-# niri-git | vesktop | flatpak-git | dms-shell-git |
-# opentabletdriver | bootc | OBS
+# niri-git | flatpak-git | dms-shell-git | opentabletdriver | bootc
 
 # Arch apps
 # Dolphin | Chezmoi | Gnome-Disks | Docker | Podman | SCX Manager | Steam | Mangohud
@@ -132,7 +128,7 @@ RUN pacman -S --noconfirm steam gamescope scx-scheds scx-manager gnome-disk-util
 # Flatpaks
 # Bazaar | Firefox | Krita | Elisa | Pinta | OBS | Ark | Faugus Launcher | ProtonPlus | Kdenlive |
 # Okular | Kate | Warehouse | Fedora Media Writer | Gear Lever | Haruna | Gwenview
-# Audacity | Not Tetris 2 | Resources
+# Audacity | Not Tetris 2 | Resources | Vesktop
 
 ##############################################################################################################################################
 # Section 3 - Chaotic AUR / AUR # We grab some precompiled packages from the Chaotic AUR for things not on Arch repos/better updated~ ovo ####
@@ -144,17 +140,16 @@ RUN pacman-key --init && pacman-key --lsign-key 3056513887B78AEB
 RUN pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' --noconfirm
 RUN pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
 RUN echo -e '[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist' >> /etc/pacman.conf
-# Heck's Bootc repo
+# Hec's Bootc repo
 RUN pacman-key --recv-key 5DE6BF3EBC86402E7A5C5D241FA48C960F9604CB --keyserver keyserver.ubuntu.com
 RUN pacman-key --lsign-key 5DE6BF3EBC86402E7A5C5D241FA48C960F9604CB
 RUN echo -e '[bootc]\nSigLevel = Required\nServer=https://github.com/hecknt/arch-bootc-pkgs/releases/download/$repo' >> /etc/pacman.conf
 
-RUN pacman -Sy --noconfirm
+RUN pacman -Syu --noconfirm
 
 RUN pacman -S --noconfirm \
-    chaotic-aur/niri-git chaotic-aur/flatpak-git chaotic-aur/obs-studio-stable chaotic-aur/obs-vkcapture-git \
-    chaotic-aur/dms-shell-git chaotic-aur/ttf-symbola chaotic-aur/opentabletdriver chaotic-aur/qt6ct-kde \
-    chaotic-aur/adwaita-qt5-git chaotic-aur/adwaita-qt6-git chaotic-aur/bootc chaotic-aur/ttf-twemoji chaotic-aur/vesktop
+    chaotic-aur/niri-git chaotic-aur/flatpak-git chaotic-aur/darkly-qt6-git chaotic-aur/bootc \
+    chaotic-aur/dms-shell-git chaotic-aur/opentabletdriver chaotic-aur/qt6ct-kde
 
 RUN pacman -S --noconfirm \
   bootc/uupd && \
@@ -220,8 +215,15 @@ RUN echo -e "[Flatpak Preinstall net.stabyourself.nottetris2]\nBranch=stable\nIs
 # Firefox | A fellow fluffy fox!!
 RUN echo -e "[Flatpak Preinstall org.mozilla.firefox]\nBranch=stable\nIsRuntime=false" > /usr/share/flatpak/preinstall.d/Firefox.preinstall
 
-# System Monitor/System Processes Manager
-RUN echo -e "[Flatpak Preinstall flathub net.nokyan.Resources]\nBranch=stable\nRuntime=false" > /usr/share/flatpak/preinstall.d/SystemMonitor.preinstall
+# Resources | System Monitor/System Processes Manager
+RUN echo -e "[Flatpak Preinstall net.nokyan.Resources]\nBranch=stable\nRuntime=false" > /usr/share/flatpak/preinstall.d/SystemMonitor.preinstall
+
+# Vesktop | Instant Messaging Discord 3rd Party Chat client
+RUN echo -e "[Flatpak Preinstall dev.vencord.Vesktop]\nBranch=stable\nRuntime=false" > /usr/share/flatpak/preinstall.d/Vesktop.preinstall
+
+# OBS | Video recording/Streaming
+RUN echo -e "[Flatpak Preinstall com.obsproject.Studio]\nBranch=stable\nRuntime=false" > /usr/share/flatpak/preinstall.d/OBS.preinstall
+RUN echo -e "[Flatpak Preinstall com.obsproject.Studio.Plugin.OBSVkCapture]\nBranch=stable\nRuntime=true" > /usr/share/flatpak/preinstall.d/OBSVKCapture.preinstall
 
 ########################################################################################################################################
 # Section 5 - Linux OS stuffs | "I'd decide for myself whether his teachings are right or wrong." Near, Death Note #####################
@@ -259,9 +261,6 @@ RUN git clone --depth=1 https://github.com/Hexality/Colloidppuccin /tmp/colloid-
       -n Colloid-Orange-Dark-Catppuccin \
       -d /usr/share/themes && \
     rm -rf /tmp/colloid-gtk
-
-# Refresh icon cache
-RUN gtk-update-icon-cache -f /usr/share/icons/Colloid-Orange-Catppuccin-Dark || true
 
 # Set up zram, this will help users not run out of memory. Fox will fix!
 RUN echo -e '[zram0]\nzram-size = min(ram, 8192)' > /usr/lib/systemd/zram-generator.conf
@@ -304,7 +303,7 @@ RUN echo -e '[Default Applications]\n\
 text/plain=org.kde.kate.desktop\n\
 application/json=org.kde.kate.desktop\n\
 \n\
-text/html=firefox.desktop\n\
+text/html=floorp.desktop\n\
 \n\
 video/mp4=haruna.desktop\n\
 video/x-matroska=haruna.desktop\n\
@@ -336,7 +335,7 @@ OBS_VKCAPTURE=1\n\
 GTK_THEME=Colloid-Orange-Dark-Catppuccin\n\
 QT_STYLE_OVERRIDE=Colloid-Orange-Dark-Catppuccin\n\
 XDG_MENU_PREFIX=arch-\n\
-XDG_MENU_PREFIX=plasma-' > /etc/environment
+XDG_MENU_PREFIX=plasma-\n' > /etc/environment
 
 RUN kbuildsycoca6
 
@@ -351,40 +350,8 @@ RUN git clone --depth=1 https://github.com/Zeglius/media-automount-generator /tm
     ./install.sh && \
     rm -rf /tmp/media-automount-generator
 
-########################################################################################################################################
-# Section 6 - Set up brew | terminal packages manager utility | https://brew.sh/ | Foxy witch will mix up a brew for you! ##############
-########################################################################################################################################
-
-RUN curl -s --variable '%AUTH_HEADER' --expand-header '{{AUTH_HEADER}}' https://api.github.com/repos/ublue-os/packages/releases/latest \
-    | jq -r '.assets[] | select(.name | test("homebrew-x86_64.*\\.tar\\.zst")) | .browser_download_url' \
-    | xargs -I {} wget -O /usr/share/homebrew.tar.zst {}
-
-RUN echo '[[ -d /home/linuxbrew/.linuxbrew && $- == *i* ]] && \
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' > /etc/profile.d/brew.sh
-
-RUN echo -e "[Unit]\n\
-Description=Setup Homebrew from tarball\n\
-After=local-fs.target\n\
-ConditionPathExists=!/var/home/linuxbrew/.linuxbrew\n\
-ConditionPathExists=/usr/share/homebrew.tar.zst\n\
-\n\
-[Service]\n\
-Type=oneshot\n\
-ExecStart=/usr/bin/mkdir -p /tmp/homebrew\n\
-ExecStart=/usr/bin/mkdir -p /var/home/linuxbrew\n\
-ExecStart=/usr/bin/tar --zstd -xf /usr/share/homebrew.tar.zst -C /tmp/homebrew\n\
-ExecStart=/usr/bin/cp -R -n /tmp/homebrew/linuxbrew/.linuxbrew /var/home/linuxbrew\n\
-ExecStart=/usr/bin/chown -R 1000:1000 /var/home/linuxbrew\n\
-ExecStart=/usr/bin/rm -rf /tmp/homebrew\n\
-ExecStart=/usr/bin/touch /etc/.linuxbrew\n\
-\n\
-[Install]\n\
-WantedBy=multi-user.target" > /usr/lib/systemd/system/brew-setup.service
-
-RUN systemctl enable brew-setup.service
-
 ##############################################################################################################################################################################
-# Section 7 - Systemd n Services | Hope is just like every other kind of work you do on your body, it's cyclical, and needs to be refreshed every day -Harpy #################
+# Section 6 - Systemd n Services | Hope is just like every other kind of work you do on your body, it's cyclical, and needs to be refreshed every day -Harpy #################
 ##############################################################################################################################################################################
 
 # Systemd flatpak preinstall service, thanks Aurora
@@ -460,6 +427,8 @@ ExecStart=touch %h/.config/xeniaos/chezmoi/chezmoi.toml\n\
 ExecStart=sh -c 'yes s | chezmoi apply --no-tty --keep-going -S /usr/share/xeniaos/zdots --verbose --config %h/.config/xeniaos/chezmoi/chezmoi.toml'\n\
 Type=oneshot" >> /usr/lib/systemd/user/chezmoi-update.service
 
+RUN sed -i 's|^\[Service\]|\[Service\]\nEnvironment="NIRI_CONFIG=%h/.config/niri/xeniaos/config.kdl"|' /usr/lib/systemd/user/niri.service
+
 # This fixes a user/groups error with rebasing from other problematic images.
 # FIXME Do NOT remove until fixed upstream or fixed universally. Updating with new fix also fine. Script created by Tulip.
 RUN mkdir -p /usr/lib/systemd/system-preset /usr/lib/systemd/system
@@ -486,6 +455,7 @@ RUN systemctl enable polkit.service \
     tuned.service \
     tuned-ppd.service \
     firewalld.service \
+    greetd.service \
     flatpak-preinstall.service \
     xeniaos-group-fix.service \
     cups.socket \
@@ -503,7 +473,7 @@ RUN systemctl --global enable \
     wl-clip-persist.service
 
 ########################################################################################################################################
-# Section 8 - CachyOS settings | Since we have the CachyOS kernel, we gotta put it to good use ≽^•⩊•^≼ ################################
+# Section 7 - CachyOS settings | Since we have the CachyOS kernel, we gotta put it to good use ≽^•⩊•^≼ ################################
 ########################################################################################################################################
 
 # Activate NTSync, wags my tail in your general direction
@@ -514,7 +484,7 @@ RUN echo -e 'net.core.default_qdisc=fq \n\
 net.ipv4.tcp_congestion_control=bbr' > /etc/sysctl.d/99-bbr3.conf
 
 ########################################################################################################################################
-# Section 9 - Niri/Chezmoi/DMS | Everything to do with the desktop/visual look of your taskbar/ config files (⸝⸝>w<⸝⸝) #################
+# Section 8 - Niri/Chezmoi/DMS | Everything to do with the desktop/visual look of your taskbar/ config files (⸝⸝>w<⸝⸝) #################
 ########################################################################################################################################
 
 # Catppuccin style cursor, in a lovely orange, much like my furrrrr~
@@ -544,36 +514,69 @@ org.freedesktop.impl.portal.Notification=kde;gtk;gnome' > /usr/share/xdg-desktop
 #Starship setup
 RUN echo -e 'eval "$(starship init bash)"' >> /etc/bash.bashrc
 
-RUN pacman -S --noconfirm greetd quickshell
+# greetd config directory
+RUN mkdir -p /etc/greetd
 
-ENV NIRI_CONFIG=$XDG_CONFIG_HOME/niri/xeniaos/config.kdl
+# greeter system user (required by greetd / regreet)
+RUN useradd -M -G video,input,seat -s /usr/bin/nologin greeter || true
 
-RUN mkdir -p /etc/xdg/quickshell && \
-    git clone https://github.com/AvengeMedia/DankMaterialShell.git /etc/xdg/quickshell/dms-greeter && \
-    mkdir /var/cache/dms-greeter && \
-    chown greeter:greeter /var/cache/dms-greeter && \
-    dms greeter enable && \
-    dms greeter sync
-
-RUN echo -e 'hotkey-overlay {\n\
+RUN echo -e 'spawn-sh-at-startup "regreet niri msg action quit --skip-confirmation"\n\
+hotkey-overlay {\n\
     skip-at-startup\n\
 }\n\
+cursor {\n\
+    xcursor-theme "catppuccin-mocha-peach-cursors"\n\
+}' > /etc/greetd/niri.kdl
+
+RUN echo -e '#!/usr/bin/env bash\n\
+set -e\n\
 \n\
-environment {\n\
-    DMS_RUN_GREETER "1"\n\
-}\n\
+if [ ! -f /etc/.user-created ]; then\n\
+    exec /usr/local/bin/first-run-gui\n\
+else\n\
+    exec regreet --cmd niri-session\n\
+fi' > /usr/local/bin/first-run-dispatch
+RUN chmod 755 /usr/local/bin/first-run-dispatch
+
+RUN echo -e '[terminal]\n\
+vt = 1\n\
 \n\
-gestures {\n\
-  hot-corners {\n\
-    off\n\
-  }\n\
-}\n\
+[default_session]\n\
+command = "/usr/local/bin/first-run-dispatch"\n\
+user = "root"' > /etc/greetd/config.toml
+
+RUN echo -e '[background]\n\
+path = "/usr/share/xeniaos/wallpapers/3_hypno_chimmie_firefly_videorelaxant6025.png"\n\
 \n\
-layout {\n\
-  background-color "#000000"' > /etc/greetd/niri.kdl
+fit = "Fill"\n\
+[GTK]\n\
+application_prefer_dark_theme = true\n\
+\n\
+cursor_theme_name = "catppuccin-mocha-peach-cursors"\n\
+\n\
+cursor_blink = true\n\
+\n\
+font_name = "Maple Mono 16"\n\
+\n\
+icon_theme_name = "Colloid-Orange-Catppuccin-Dark"\n\
+\n\
+theme_name = "Colloid-Orange-Dark-Catppuccin"\n\
+[commands]\n\
+reboot = ["systemctl", "reboot"]\n\
+\n\
+poweroff = ["systemctl", "poweroff"]\n\
+[appearance]\n\
+greeting_msg = "Welcome to the fox den!~"\n\
+\n\
+[widget.clock]\n\
+format = "%a %H:%M"\n\
+\n\
+resolution = "500ms"\n\
+\n\
+label_width = 150' > /etc/greetd/regreet.toml
 
 ########################################################################################################################################
-# Section 10 - Final Bootc Setup | The horrors are endless. but we stay silly :3c -junoinfernal -maia arson crimew #####################
+# Section 9 - Final Bootc Setup | The horrors are endless. but we stay silly :3c -junoinfernal -maia arson crimew #####################
 ########################################################################################################################################
 
 RUN printf "systemdsystemconfdir=/etc/systemd/system\nsystemdsystemunitdir=/usr/lib/systemd/system\n" | tee /usr/lib/dracut/dracut.conf.d/30-bootcrew-fix-bootc-module.conf && \
